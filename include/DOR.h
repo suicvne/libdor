@@ -53,6 +53,11 @@ typedef enum DORRank {
     DORRankSD
 } DORRank;
 
+/** @brief DORDeckID Enumeration representing which saved deck to query. */
+typedef enum DORDeckID {
+    A, B, C
+} DORDeckID;
+
 /**
  * @brief DORSave Opaque structure representing a loaded save file.
  */
@@ -144,12 +149,13 @@ uint16_t DORSave_GetChecksum(const DORSave* pSave);
 DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo* pOutInfo);
 
 /**
- * @brief Attempts to grab the deck information for Deck A from the save.
+ * @brief Attempts to grab deck information from the save.
  * @param [in] pSave Pointer to the save structure.
- * @param [out] pOutInfo Pointer to place DORDeckInfo structure in, for Deck A only right now.
+ * @param [in] DeckID Which deck should we query?
+ * @param [out] pOutInfo Pointer to place DORDeckInfo structure in.
  * @returns Status indicating if the deck information was retrieavable or not.
  */
-DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckInfo* pOutInfo);
+DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInfo* pOutInfo);
 
 /**
  * @brief Attempts to grab the players name as a UTF8-encoded C string.

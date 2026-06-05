@@ -35,7 +35,7 @@ static void PrintDeck(const DORSave* pSave)
         printf("Player name: %s\n", Name);
     }
 
-    if (DORSave_GetDeckInfo(pSave, &Deck) != DORStatusOk) {
+    if (DORSave_GetDeckInfo(pSave, A, &Deck) != DORStatusOk) {
         printf("Could not read DOR deck block.\n");
         return;
     }

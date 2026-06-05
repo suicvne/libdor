@@ -155,31 +155,39 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
     return DORStatusOk;
 }
 
-DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckInfo* pOutInfo)
+DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInfo* pOutInfo)
 {
+    size_t DeckOffset;
+    size_t CardsOffset;
+    size_t LeaderOffset;
     size_t Index;
 
     if (pSave == NULL || pOutInfo == NULL) {
         return DORStatusInvalidArgument;
     }
-    if (DORDeckLeaderOffset + 4u > pSave->ByteCount) {
+    if (DeckID != A && DeckID != B && DeckID != C) {
+        return DORStatusInvalidArgument;
+    }
+
+    DeckOffset = (size_t)DeckID * DORDeckRecordSize;
+    CardsOffset = DORDeckCardsOffset + DeckOffset;
+    LeaderOffset = DORDeckLeaderOffset + DeckOffset;
+
+    if (LeaderOffset + 4u > pSave->ByteCount) {
         return DORStatusInvalidFormat;
     }
 
     memset(pOutInfo, 0, sizeof(*pOutInfo));
     for (Index = 0; Index < DORDeckCardCount; Index++) {
-        pOutInfo->Cards[Index] = DORReadU16LE(pSave->pBytes + DORDeckCardsOffset + Index * 2u);
+        pOutInfo->Cards[Index] = DORReadU16LE(pSave->pBytes + CardsOffset + Index * 2u);
     }
 
-    pOutInfo->LeaderCardId = DORReadU16LE(pSave->pBytes + DORDeckLeaderOffset);
-    pOutInfo->UnknownAfterLeader = DORReadU16LE(pSave->pBytes + DORDeckLeaderOffset + 2u);
+    pOutInfo->LeaderCardId = DORReadU16LE(pSave->pBytes + LeaderOffset);
+    pOutInfo->UnknownAfterLeader = DORReadU16LE(pSave->pBytes + LeaderOffset + 2u);
     return DORStatusOk;
 }
 
-const char* DORCard_GetName(uint16_t CardId)
-{
-    return DORCardNameLookup(CardId);
-}
+const char* DORCard_GetName(uint16_t CardId) { return DORCardNameLookup(CardId); }
 
 const char* DORStatus_ToString(DORStatus Status)
 {

@@ -10,6 +10,7 @@
 #define DORDeckBlockOffset 0x0FD88u     /** @brief Offset into where the deck block exists (All 3 decks, Deck A starts here) */
 #define DORDeckCardsOffset 0x0FD98u     /** @brief Offset into where first deck cards start */
 #define DORDeckLeaderOffset 0x0FDE8u    /** @brief Offset into where deck leader data is */
+#define DORDeckRecordSize 0x54u         /** @brief Size of one saved deck record: 40 card IDs, leader ID, and unknown value */
 #define DORProfileBlockOffset 0x0FF9Cu  /** @brief Offset into save where profile block is. Player name, etc. */
 #define DORPlayerNameOffset 0x0FFC8u    /** @brief Offset into save where player name specifically is. */
 
