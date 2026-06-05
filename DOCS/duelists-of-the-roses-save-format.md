@@ -115,7 +115,7 @@ The second sample clarifies the active deck boundary:
 | `0x0FD8C..0x0FD97` | `u16[6]` | pre-deck slots or prior state; values can be `999` sentinels |
 | `0x0FD98..0x0FDE7` | `u16[40]` | active 40-card deck list |
 | `0x0FDE8` | `u16` | active deck leader card id |
-| `0x0FDEA` | `u16` | unknown; valid card id in both samples |
+| `0x0FDEA` | `u16` | Stored deck cost |
 
 `999` / `0x03E7` appears to be an empty-slot sentinel in the tail deck/list area.
 

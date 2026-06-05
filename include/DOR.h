@@ -117,7 +117,7 @@ typedef struct DORCardInfo {
 typedef struct DORDeckInfo {
     uint16_t Cards[DORDeckCardCount]; /**< ID of each card in the deck, or DOREmptyCardId. */
     uint16_t LeaderCardId;            /**< Card ID of the leader, or DOREmptyCardId. */
-    uint16_t UnknownAfterLeader;      /**< Currently unknown. Padding? */
+    uint16_t StoredDeckCost;          /**< Save's stored deck cost for this deck. Probably to be validated against for anti-tampering. */
 } DORDeckInfo;
 
 // ======================================= DORSave Ctors/Dtors =======================================

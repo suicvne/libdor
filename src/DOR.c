@@ -183,7 +183,7 @@ DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInf
     }
 
     pOutInfo->LeaderCardId = DORReadU16LE(pSave->pBytes + LeaderOffset);
-    pOutInfo->UnknownAfterLeader = DORReadU16LE(pSave->pBytes + LeaderOffset + 2u);
+    pOutInfo->StoredDeckCost = DORReadU16LE(pSave->pBytes + LeaderOffset + 2u);
     return DORStatusOk;
 }
 

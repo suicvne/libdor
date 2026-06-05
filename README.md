@@ -10,6 +10,7 @@ Please note, we have currently only tested the US SKU SLUS 20515.
 ## Pending
 - Determining where deck leader ability information is stored
 - Determining where rose card count is stored.
+- Determining where "newcomer sort" metadata is stored.
 - Writing card data
 - Completion of char lookup table (NTSC symbols)
 - Purpose of `Flags` on `DORCardInfo`

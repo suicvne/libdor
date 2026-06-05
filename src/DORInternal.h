@@ -3,16 +3,16 @@
 
 #include "common.h"
 
-#define DORGameDataSize 0x100F0u        /** @brief Size of game data save in bytes:  65,776 bytes */
-#define DORCardRecordSize 0x4Cu         /** @brief Size of a single card record: 76 bytes */
-#define DORCardRecordsOffset 0x00000u   /** @brief Offset into save data where card records exist */
-#define DORChecksumOffset 0x00002u      /** @brief Offset into save data where checksum exists */
-#define DORDeckBlockOffset 0x0FD88u     /** @brief Offset into where the deck block exists (All 3 decks, Deck A starts here) */
-#define DORDeckCardsOffset 0x0FD98u     /** @brief Offset into where first deck cards start */
-#define DORDeckLeaderOffset 0x0FDE8u    /** @brief Offset into where deck leader data is */
-#define DORDeckRecordSize 0x54u         /** @brief Size of one saved deck record: 40 card IDs, leader ID, and unknown value */
-#define DORProfileBlockOffset 0x0FF9Cu  /** @brief Offset into save where profile block is. Player name, etc. */
-#define DORPlayerNameOffset 0x0FFC8u    /** @brief Offset into save where player name specifically is. */
+#define DORGameDataSize 0x100F0u        /**< Size of game data save in bytes:  65,776 bytes */
+#define DORCardRecordSize 0x4Cu         /**< Size of a single card record: 76 bytes */
+#define DORCardRecordsOffset 0x00000u   /**< Offset into save data where card records exist */
+#define DORChecksumOffset 0x00002u      /**< Offset into save data where checksum exists */
+#define DORDeckBlockOffset 0x0FD88u     /**< Offset into where the deck block exists (All 3 decks, Deck A starts here) */
+#define DORDeckCardsOffset 0x0FD98u     /**< Offset into where first deck cards start */
+#define DORDeckLeaderOffset 0x0FDE8u    /**< Offset into where deck leader data is */
+#define DORDeckRecordSize 0x54u         /**< Size of one saved deck record: 40 card IDs, leader ID, and unknown value */
+#define DORProfileBlockOffset 0x0FF9Cu  /**< Offset into save where profile block is. Player name, etc. */
+#define DORPlayerNameOffset 0x0FFC8u    /**< Offset into save where player name specifically is. */
 
 struct DORSave {
     uint8_t* pBytes;  /**< ptr to raw bytes of DOR Save */
