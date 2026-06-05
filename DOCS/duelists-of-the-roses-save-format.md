@@ -100,7 +100,7 @@ Observed copy slot states:
 
 The complete save was reported to have `7595` cards in the chest. Counting all `25 05 62 67 00 00 00 C0` slots across `854 * 9` slots gives exactly `7595` in that save, but a low-inventory save shows the actual empty slot pattern is `00 00 00 00 00 00 00 C0`. Therefore `25 05 62 67 00 00 00 C0` is an occupied state in the complete save, not a universally confirmed "chest copy" state.
 
-`DORCardInfo.TotalCopyCount` currently counts slots that are not one of the observed empty states:
+`DORCardInfo_GetTotalCopyCount` currently counts slots that are not one of the observed empty states:
 
 ```text
 00 00 00 00 00 00 00 00

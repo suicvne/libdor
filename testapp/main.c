@@ -4,6 +4,50 @@
 #include <stdio.h>
 #include <string.h>
 
+typedef struct TestAppOptions {
+    int ExtendedInfo;
+    int SetName;
+    const char* pInputPath;
+    const char* pOutputPath;
+    const char* pName;
+} TestAppOptions;
+
+static void PrintUsage(const char* pProgramName)
+{
+    fprintf(stderr, "usage: %s [-x] <save.psu>\n", pProgramName);
+    fprintf(stderr, "       %s [-x] --set-name <input.psu> <output.psu> <name>\n", pProgramName);
+}
+
+static int ParseOptions(int argc, char** ppArgv, TestAppOptions* pOptions)
+{
+    int ArgIndex = 1;
+
+    memset(pOptions, 0, sizeof(*pOptions));
+    if (ArgIndex < argc && strcmp(ppArgv[ArgIndex], "-x") == 0) {
+        pOptions->ExtendedInfo = 1;
+        ArgIndex++;
+    }
+
+    if (ArgIndex < argc && strcmp(ppArgv[ArgIndex], "--set-name") == 0) {
+        if (argc - ArgIndex != 4) {
+            return 0;
+        }
+
+        pOptions->SetName = 1;
+        pOptions->pInputPath = ppArgv[ArgIndex + 1];
+        pOptions->pOutputPath = ppArgv[ArgIndex + 2];
+        pOptions->pName = ppArgv[ArgIndex + 3];
+        return 1;
+    }
+
+    if (argc - ArgIndex != 1) {
+        return 0;
+    }
+
+    pOptions->pInputPath = ppArgv[ArgIndex];
+    return 1;
+}
+
 static void PrintPSUEntries(const PSUArchive* pArchive)
 {
     size_t Count = PSUArchive_GetEntryCount(pArchive);
@@ -24,7 +68,24 @@ static void PrintPSUEntries(const PSUArchive* pArchive)
     }
 }
 
-static void PrintDeck(const DORSave* pSave)
+static void PrintCopySlots(const DORCardInfo* pCardInfo)
+{
+    size_t SlotIndex;
+    size_t ByteIndex;
+
+    printf("      Copy slots:\n");
+    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
+        printf("        ");
+        for (ByteIndex = 0; ByteIndex < DORCardCopySlotByteCount; ByteIndex++) {
+            printf("%02X%s",
+                   (unsigned)pCardInfo->CopySlots[SlotIndex][ByteIndex],
+                   ByteIndex + 1u == DORCardCopySlotByteCount ? "" : " ");
+        }
+        printf("\n");
+    }
+}
+
+static void PrintDeck(const DORSave* pSave, int ExtendedInfo)
 {
     DORDeckInfo Deck;
     DORCardInfo LeaderInfo;
@@ -46,7 +107,7 @@ static void PrintDeck(const DORSave* pSave)
                (unsigned)LeaderInfo.Experience,
                DORRank_ToString(DORRank_FromExperience(LeaderInfo.Experience)),
                (unsigned)LeaderInfo.StateMarker,
-               LeaderInfo.TotalCopyCount
+               DORCardInfo_GetTotalCopyCount(&LeaderInfo)
         );
     }
     printf("Stored deck cost: %u\n", Deck.StoredDeckCost);
@@ -56,31 +117,41 @@ static void PrintDeck(const DORSave* pSave)
     for (Index = 0; Index < DORDeckCardCount; Index++) {
         uint16_t CardId = Deck.Cards[Index];
 
-        DORSave_GetCardInfo(pSave, CardId, &CardInfo);
+        if (DORSave_GetCardInfo(pSave, CardId, &CardInfo) != DORStatusOk) {
+            printf("  %2lu: %3u - %s; Copies: unavailable\n",
+                   (unsigned long)Index,
+                   (unsigned)CardId,
+                   DORCard_GetName(CardId));
+            continue;
+        }
+
         printf("  %2lu: %3u - %s; Copies: %u\n",
                (unsigned long)Index,
                (unsigned)CardId,
                DORCard_GetName(CardId),
-               CardInfo.TotalCopyCount
-        );
+               DORCardInfo_GetTotalCopyCount(&CardInfo));
+
+        if (ExtendedInfo) {
+            PrintCopySlots(&CardInfo);
+        }
     }
 }
 
 int main(int argc, char** ppArgv)
 {
+    TestAppOptions Options;
     PSUArchive* pArchive = NULL;
     DORSave* pSave = NULL;
     PSUEntryInfo GameEntry;
     PSUStatus PsuStatus;
     DORStatus DorStatus;
 
-    if (argc != 2 && argc != 5) {
-        fprintf(stderr, "usage: %s <save.psu>\n", ppArgv[0]);
-        fprintf(stderr, "       %s --set-name <input.psu> <output.psu> <name>\n", ppArgv[0]);
+    if (!ParseOptions(argc, ppArgv, &Options)) {
+        PrintUsage(ppArgv[0]);
         return 2;
     }
 
-    PsuStatus = PSUArchive_CreateFromFile(argc == 2 ? ppArgv[1] : ppArgv[2], &pArchive);
+    PsuStatus = PSUArchive_CreateFromFile(Options.pInputPath, &pArchive);
     if (PsuStatus != PSUStatusOk) {
         fprintf(stderr, "failed to read PSU: %s\n", PSUStatus_ToString(PsuStatus));
         return 1;
@@ -98,15 +169,8 @@ int main(int argc, char** ppArgv)
     printf("DOR game data size: 0x%lx\n", (unsigned long)DORSave_GetSize(pSave));
     printf("DOR checksum: 0x%04x\n", (unsigned)DORSave_GetChecksum(pSave));
 
-    if (argc == 5) {
-        if (strcmp(ppArgv[1], "--set-name") != 0) {
-            fprintf(stderr, "unknown command: %s\n", ppArgv[1]);
-            DORSave_Destroy(pSave);
-            PSUArchive_Destroy(pArchive);
-            return 2;
-        }
-
-        DorStatus = DORSave_SetPlayerName(pSave, ppArgv[4]);
+    if (Options.SetName) {
+        DorStatus = DORSave_SetPlayerName(pSave, Options.pName);
         if (DorStatus != DORStatusOk) {
             fprintf(stderr, "failed to set player name: %s\n", DORStatus_ToString(DorStatus));
             DORSave_Destroy(pSave);
@@ -130,7 +194,7 @@ int main(int argc, char** ppArgv)
             return 1;
         }
 
-        PsuStatus = PSUArchive_WriteToFile(pArchive, ppArgv[3]);
+        PsuStatus = PSUArchive_WriteToFile(pArchive, Options.pOutputPath);
         if (PsuStatus != PSUStatusOk) {
             fprintf(stderr, "failed to write PSU: %s\n", PSUStatus_ToString(PsuStatus));
             DORSave_Destroy(pSave);
@@ -138,10 +202,10 @@ int main(int argc, char** ppArgv)
             return 1;
         }
 
-        printf("Wrote %s\n", ppArgv[3]);
+        printf("Wrote %s\n", Options.pOutputPath);
     }
 
-    PrintDeck(pSave);
+    PrintDeck(pSave, Options.ExtendedInfo);
 
     DORSave_Destroy(pSave);
     PSUArchive_Destroy(pArchive);

@@ -23,6 +23,9 @@ extern "C" {
 /** @brief Maximum number of save slots for copies of a single card. */
 #define DORCardCopySlotCount    9u
 
+/** @brief Number of bytes in one save slot for a card copy. */
+#define DORCardCopySlotByteCount 8u
+
 /** @brief Maximum number of cards in a single deck. */
 #define DORDeckCardCount        40u
 
@@ -108,14 +111,9 @@ typedef struct DORCardInfo {
     uint8_t  QuantityOrOwned;       /**< First byte of the card record header. Not a reliable chest count. */
     uint8_t  Flags;                 /**< Flags specific to this card, these are still relatively unknown. */
     uint16_t Experience;            /**< The amount of experience points this card has. 0 - 65535 */
-
-
     uint32_t StateMarker;           /**< First 4 bytes of copy slot 0. Often 0x67620525. */
     uint32_t Unknown08;             /**< Last 4 bytes of copy slot 0. Often indicates copy location/state. */
-    uint8_t  ChestCopyCount;        /**< Number of slots matching the complete-save chest-like pattern. */
-    uint8_t  DeckCopyCount;         /**< Number of slots matching observed deck-assigned patterns. */
-    uint8_t  LeaderMarkerCount;     /**< Number of copy slots with the observed 0xE7 leader marker. */
-    uint8_t  TotalCopyCount;        /**< Number of occupied/owned copy slots observed for this card. */
+    uint8_t  CopySlots[DORCardCopySlotCount][DORCardCopySlotByteCount]; /**< Raw per-copy slot bytes for this card. */
 } DORCardInfo;
 
 /**
@@ -225,6 +223,34 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
 // ========================================= DORSave Members =========================================
 
 // ========================================= Misc Members =========================================
+
+/**
+ * @brief Counts raw copy slots matching the complete-save chest-like pattern.
+ * @param [in] pInfo Pointer to card info previously filled by DORSave_GetCardInfo.
+ * @returns Count of matching copy slots, or 0 if pInfo is NULL.
+ */
+uint8_t DORCardInfo_GetChestCopyCount(const DORCardInfo* pInfo);
+
+/**
+ * @brief Counts raw copy slots matching observed deck-assigned patterns.
+ * @param [in] pInfo Pointer to card info previously filled by DORSave_GetCardInfo.
+ * @returns Count of matching copy slots, or 0 if pInfo is NULL.
+ */
+uint8_t DORCardInfo_GetDeckCopyCount(const DORCardInfo* pInfo);
+
+/**
+ * @brief Counts raw copy slots with the observed leader marker.
+ * @param [in] pInfo Pointer to card info previously filled by DORSave_GetCardInfo.
+ * @returns Count of matching copy slots, or 0 if pInfo is NULL.
+ */
+uint8_t DORCardInfo_GetLeaderMarkerCount(const DORCardInfo* pInfo);
+
+/**
+ * @brief Counts raw copy slots that are not one of the observed empty patterns.
+ * @param [in] pInfo Pointer to card info previously filled by DORSave_GetCardInfo.
+ * @returns Count of occupied/owned copy slots, or 0 if pInfo is NULL.
+ */
+uint8_t DORCardInfo_GetTotalCopyCount(const DORCardInfo* pInfo);
 
 /**
  * @brief Returns ASCII name of a card based on its card ID.
