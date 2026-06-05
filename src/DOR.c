@@ -395,6 +395,20 @@ DORStatus DORSave_GetRawPlayerNameBytes(const DORSave* pSave, const uint8_t** pp
     return DORStatusOk;
 }
 
+DORStatus DORSave_GetProfileTokenBytes(const DORSave* pSave, const uint8_t** ppOutBytes, size_t* pOutByteCount)
+{
+    if (pSave == NULL || ppOutBytes == NULL || pOutByteCount == NULL) {
+        return DORStatusInvalidArgument;
+    }
+    if (DORProfileBlockOffset + DORProfileTokenSize > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    *ppOutBytes = pSave->pBytes + DORProfileBlockOffset;
+    *pOutByteCount = DORProfileTokenSize;
+    return DORStatusOk;
+}
+
 DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
 {
     uint8_t NewNameBytes[DORNameCharacterCount * 2u];

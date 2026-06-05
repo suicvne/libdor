@@ -258,6 +258,15 @@ DORStatus DORSave_GetPlayerName(const DORSave* pSave, char* pOutBuffer, size_t O
 DORStatus DORSave_GetRawPlayerNameBytes(const DORSave* pSave, const uint8_t** ppOutBytes, size_t* pOutByteCount);
 
 /**
+ * @brief Returns the raw bytes for the profile validation token.
+ * @param [in] pSave Pointer to the save structure.
+ * @param [out] ppOutBytes Pointer to receive the raw token byte span.
+ * @param [out] pOutByteCount Pointer to receive the byte count of the token field.
+ * @returns Status indicating if the byte span was retrievable.
+ */
+DORStatus DORSave_GetProfileTokenBytes(const DORSave* pSave, const uint8_t** ppOutBytes, size_t* pOutByteCount);
+
+/**
  * @brief Attempts to set the player's name on the save given an ASCII C string.
  *        The player's name will be translated to Duelists of the Roses encoding.
  *
