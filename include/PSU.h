@@ -4,7 +4,8 @@
  * @brief Top level header containing API definitions for interacting with
  *        PSU save archives.
  * @copyright Copyright (c) 2026
- * @defgroup libdor PSU IO
+ * @defgroup libdor_psu PSU IO
+ * @{
  */
 
 
@@ -140,5 +141,7 @@ const char* PSUStatus_ToString(PSUStatus Status);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif // LIBDOR_PSU_H

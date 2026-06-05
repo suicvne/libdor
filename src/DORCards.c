@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-static const char* DORCardNames[DORCardCount] = {
+static const char* gDORCardNames[DORCardCount] = {
     [0] = "Blue Eyes White Dragon",
     [1] = "Seiyaryu",
     [2] = "Blue-Eyes Ultimate Dragon",
@@ -864,8 +864,8 @@ const char* DORCardNameLookup(uint16_t CardId)
 {
     static char Fallback[32];
 
-    if (CardId < DORCardCount && DORCardNames[CardId] != NULL) {
-        return DORCardNames[CardId];
+    if (CardId < DORCardCount && gDORCardNames[CardId] != NULL) {
+        return gDORCardNames[CardId];
     }
 
     snprintf(Fallback, sizeof(Fallback), "Card %03u", (unsigned)CardId);

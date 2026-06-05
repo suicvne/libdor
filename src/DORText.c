@@ -1,8 +1,6 @@
 #include "DOR.h"
 #include "DORInternal.h"
 
-#include <stddef.h>
-
 #define DORTextUnknownCharacter '?'
 
 static const uint8_t DORTextEncodeTable[128] = {

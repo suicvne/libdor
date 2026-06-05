@@ -20,4 +20,16 @@ target_include_directories(dor
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    add_custom_target(docs ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/DOCS
+        COMMENT "Generating Doxygen documentation"
+        VERBATIM
+    )
+else()
+    message(STATUS "Doxygen not found; documentation will not be generated during the build.")
+endif()
+
 add_subdirectory(testapp)

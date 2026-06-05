@@ -5,6 +5,7 @@
  *        Yu-Gi-Oh! Duelists of the Roses saves.
  * @copyright Copyright (c) 2026
  * @defgroup libdor DOR Structures
+ * @{
  */
 
 #ifndef LIBDOR_H
@@ -227,5 +228,7 @@ DORStatus DORText_DecodeToBuffer(const uint16_t* pEncodedText, size_t CharacterC
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif // LIBDOR_H

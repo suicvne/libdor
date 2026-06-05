@@ -1,6 +1,7 @@
 # macOS
 .DS_Store
 [Bb]uild/
+DOCS/doxygen_output/
 
 # Prerequisites
 *.d
