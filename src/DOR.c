@@ -381,9 +381,24 @@ DORStatus DORSave_GetPlayerName(const DORSave* pSave, char* pOutBuffer, size_t O
     return DORText_DecodeToBuffer(Encoded, DORNameCharacterCount, pOutBuffer, OutBufferSize);
 }
 
+DORStatus DORSave_GetRawPlayerNameBytes(const DORSave* pSave, const uint8_t** ppOutBytes, size_t* pOutByteCount)
+{
+    if (pSave == NULL || ppOutBytes == NULL || pOutByteCount == NULL) {
+        return DORStatusInvalidArgument;
+    }
+    if (DORPlayerNameOffset + DORNameCharacterCount * 2u > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    *ppOutBytes = pSave->pBytes + DORPlayerNameOffset;
+    *pOutByteCount = DORNameCharacterCount * 2u;
+    return DORStatusOk;
+}
+
 DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
 {
     uint8_t NewNameBytes[DORNameCharacterCount * 2u];
+    char CurrentName[DORNameCharacterCount + 1u];
     size_t NameLength;
     size_t Index;
     int ChecksumDelta = 0;
@@ -402,7 +417,12 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
         return DORStatusInvalidArgument;
     }
 
-    memset(NewNameBytes, 0, sizeof(NewNameBytes));
+    // if (DORSave_GetPlayerName(pSave, CurrentName, sizeof(CurrentName)) == DORStatusOk &&
+    //         strcmp(CurrentName, pName) == 0) {
+    //     return DORStatusOk;
+    // }
+
+    memcpy(NewNameBytes, pSave->pBytes + DORPlayerNameOffset, sizeof(NewNameBytes));
     for (Index = 0; Index < NameLength; Index++) {
         uint8_t Code;
 

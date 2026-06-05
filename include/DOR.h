@@ -249,6 +249,15 @@ DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInf
 DORStatus DORSave_GetPlayerName(const DORSave* pSave, char* pOutBuffer, size_t OutBufferSize);
 
 /**
+ * @brief Returns the raw encoded bytes for the player name field.
+ * @param [in] pSave Pointer to the save structure.
+ * @param [out] ppOutBytes Pointer to receive the raw name byte span.
+ * @param [out] pOutByteCount Pointer to receive the byte count of the name field.
+ * @returns Status indicating if the byte span was retrievable.
+ */
+DORStatus DORSave_GetRawPlayerNameBytes(const DORSave* pSave, const uint8_t** ppOutBytes, size_t* pOutByteCount);
+
+/**
  * @brief Attempts to set the player's name on the save given an ASCII C string.
  *        The player's name will be translated to Duelists of the Roses encoding.
  *
