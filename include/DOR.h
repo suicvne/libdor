@@ -20,6 +20,9 @@ extern "C" {
 /** @brief Maximum number of cards in the entire game. Also represents maximum ID. */
 #define DORCardCount            854u
 
+/** @brief Maximum number of save slots for copies of a single card. */
+#define DORCardCopySlotCount    9u
+
 /** @brief Maximum number of cards in a single deck. */
 #define DORDeckCardCount        40u
 
@@ -102,11 +105,17 @@ typedef struct DORSave DORSave;
  */
 typedef struct DORCardInfo {
     uint16_t CardId;                /**< ID of the card from 000 - 854 */
-    uint8_t  QuantityOrOwned;       /**< 0 if not owned, quantity otherwise 0 - 9 */
+    uint8_t  QuantityOrOwned;       /**< First byte of the card record header. Not a reliable chest count. */
     uint8_t  Flags;                 /**< Flags specific to this card, these are still relatively unknown. */
     uint16_t Experience;            /**< The amount of experience points this card has. 0 - 65535 */
-    uint32_t StateMarker;           /**< State marker unique to each save/name. */
-    uint32_t Unknown08;             /**< Currently unknown, padding bytes? */
+
+
+    uint32_t StateMarker;           /**< First 4 bytes of copy slot 0. Often 0x67620525. */
+    uint32_t Unknown08;             /**< Last 4 bytes of copy slot 0. Often indicates copy location/state. */
+    uint8_t  ChestCopyCount;        /**< Number of slots matching the complete-save chest-like pattern. */
+    uint8_t  DeckCopyCount;         /**< Number of slots matching observed deck-assigned patterns. */
+    uint8_t  LeaderMarkerCount;     /**< Number of copy slots with the observed 0xE7 leader marker. */
+    uint8_t  TotalCopyCount;        /**< Number of occupied/owned copy slots observed for this card. */
 } DORCardInfo;
 
 /**

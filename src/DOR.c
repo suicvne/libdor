@@ -9,6 +9,18 @@
 
 // ======================================== Little endian IO helpers ========================================
 
+static const uint8_t DORCardCopySlotChest[DORCardCopySlotSize] = {
+    0x25u, 0x05u, 0x62u, 0x67u, 0x00u, 0x00u, 0x00u, 0xC0u
+};
+
+static const uint8_t DORCardCopySlotDeck[DORCardCopySlotSize] = {
+    0x25u, 0x05u, 0x62u, 0x67u, 0x00u, 0x00u, 0x00u, 0x40u
+};
+
+static const uint8_t DORCardCopySlotDeckA[DORCardCopySlotSize] = {
+    0x25u, 0x05u, 0x62u, 0x67u, 0x25u, 0x05u, 0x62u, 0x67u
+};
+
 static uint16_t DORReadU16LE(const uint8_t* pBytes)
 {
     return (uint16_t)(((uint16_t)pBytes[0]) | ((uint16_t)pBytes[1] << 8));
@@ -50,6 +62,30 @@ static int DORCardRecordOffsetFromCardId(uint16_t CardId, size_t* pOutOffset)
 
     *pOutOffset = DORCardRecordsOffset + RecordIndex * DORCardRecordSize;
     return 1;
+}
+
+static int DORBytesEqual(const uint8_t* pA, const uint8_t* pB, size_t ByteCount)
+{
+    return memcmp(pA, pB, ByteCount) == 0;
+}
+
+static int DORCardCopySlotIsLeader(const uint8_t* pSlot)
+{
+    return pSlot[0] == 0x25u &&
+           pSlot[1] == 0x05u &&
+           pSlot[2] == 0x62u &&
+           pSlot[3] == 0xE7u;
+}
+
+static int DORCardCopySlotIsEmpty(const uint8_t* pSlot)
+{
+    static const uint8_t EmptySlot[DORCardCopySlotSize] = {0};
+    static const uint8_t EmptySlotC0[DORCardCopySlotSize] = {
+        0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0xC0u
+    };
+
+    return DORBytesEqual(pSlot, EmptySlot, sizeof(EmptySlot)) ||
+           DORBytesEqual(pSlot, EmptySlotC0, sizeof(EmptySlotC0));
 }
 
 DORStatus DORSave_CreateFromBytes(const uint8_t* pBytes, size_t ByteCount, DORSave** ppOutSave)
@@ -135,7 +171,10 @@ uint16_t DORSave_GetChecksum(const DORSave* pSave)
 DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo* pOutInfo)
 {
     size_t Offset;
+    size_t CopyOffset;
+    size_t SlotIndex;
     const uint8_t* pRecord;
+    const uint8_t* pCopyRecord;
 
     if (pSave == NULL || pOutInfo == NULL) {
         return DORStatusInvalidArgument;
@@ -152,6 +191,30 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
     pOutInfo->Experience = DORReadU16LE(pRecord + 0x02);
     pOutInfo->StateMarker = DORReadU32LE(pRecord + 0x04);
     pOutInfo->Unknown08 = DORReadU32LE(pRecord + 0x08);
+
+    CopyOffset = DORCardRecordsOffset + (size_t)CardId * DORCardRecordSize;
+    if (CopyOffset + DORCardRecordSize > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    pCopyRecord = pSave->pBytes + CopyOffset;
+    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
+        const uint8_t* pSlot = pCopyRecord + DORCardCopySlotOffset + SlotIndex * DORCardCopySlotSize;
+
+        if (DORBytesEqual(pSlot, DORCardCopySlotChest, DORCardCopySlotSize)) {
+            pOutInfo->ChestCopyCount++;
+        } else if (DORBytesEqual(pSlot, DORCardCopySlotDeck, DORCardCopySlotSize) ||
+                   DORBytesEqual(pSlot, DORCardCopySlotDeckA, DORCardCopySlotSize)) {
+            pOutInfo->DeckCopyCount++;
+        } else if (DORCardCopySlotIsLeader(pSlot)) {
+            pOutInfo->LeaderMarkerCount++;
+        }
+
+        if (!DORCardCopySlotIsEmpty(pSlot)) {
+            pOutInfo->TotalCopyCount++;
+        }
+    }
+
     return DORStatusOk;
 }
 

@@ -42,20 +42,27 @@ static void PrintDeck(const DORSave* pSave)
 
     printf("Deck leader: %u - %s\n", Deck.LeaderCardId, DORCard_GetName(Deck.LeaderCardId));
     if (DORSave_GetCardInfo(pSave, Deck.LeaderCardId, &LeaderInfo) == DORStatusOk) {
-        printf("Leader XP: %u (%s), marker=0x%08x\n",
+        printf("Leader XP: %u (%s), marker=0x%08x, TotalCopies=%u\n",
                (unsigned)LeaderInfo.Experience,
                DORRank_ToString(DORRank_FromExperience(LeaderInfo.Experience)),
-               (unsigned)LeaderInfo.StateMarker);
+               (unsigned)LeaderInfo.StateMarker,
+               LeaderInfo.TotalCopyCount
+        );
     }
-    printf("Unknown after leader: %u\n", Deck.UnknownAfterLeader);
+    printf("Stored deck cost: %u\n", Deck.StoredDeckCost);
 
     printf("Deck cards:\n");
+    DORCardInfo CardInfo;
     for (Index = 0; Index < DORDeckCardCount; Index++) {
         uint16_t CardId = Deck.Cards[Index];
-        printf("  %2lu: %3u - %s\n",
+
+        DORSave_GetCardInfo(pSave, CardId, &CardInfo);
+        printf("  %2lu: %3u - %s; Copies: %u\n",
                (unsigned long)Index,
                (unsigned)CardId,
-               DORCard_GetName(CardId));
+               DORCard_GetName(CardId),
+               CardInfo.TotalCopyCount
+        );
     }
 }
 
