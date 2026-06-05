@@ -9,19 +9,6 @@
 
 // ======================================== Little endian IO helpers ========================================
 
-// TODO: These are not guaranteed AT ALL....
-static const uint8_t DORCardCopySlotChest[DORCardCopySlotSize] = {
-    0x25u, 0x05u, 0x62u, 0x67u, 0x00u, 0x00u, 0x00u, 0xC0u
-};
-
-static const uint8_t DORCardCopySlotDeck[DORCardCopySlotSize] = {
-    0x25u, 0x05u, 0x62u, 0x67u, 0x00u, 0x00u, 0x00u, 0x40u
-};
-
-static const uint8_t DORCardCopySlotDeckA[DORCardCopySlotSize] = {
-    0x25u, 0x05u, 0x62u, 0x67u, 0x25u, 0x05u, 0x62u, 0x67u
-};
-
 static uint16_t DORReadU16LE(const uint8_t* pBytes)
 {
     return (uint16_t)(((uint16_t)pBytes[0]) | ((uint16_t)pBytes[1] << 8));
@@ -65,28 +52,32 @@ static int DORCardRecordOffsetFromCardId(uint16_t CardId, size_t* pOutOffset)
     return 1;
 }
 
-static int DORBytesEqual(const uint8_t* pA, const uint8_t* pB, size_t ByteCount)
+static int DORCopySlotHasKnownOccupiedMarker(const DORCopySlot* pSlot)
 {
-    return memcmp(pA, pB, ByteCount) == 0;
+    return pSlot->Fields.Marker0 == 0x25u &&
+           pSlot->Fields.Marker1 == 0x05u &&
+           pSlot->Fields.Marker2 == 0x62u &&
+           (pSlot->Fields.DeckLeaderState == DORCopySlotDeckLeaderStateNormal ||
+            pSlot->Fields.DeckLeaderState == DORCopySlotDeckLeaderStateLeader);
 }
 
-static int DORCardCopySlotIsLeader(const uint8_t* pSlot)
+static int DORCopySlotHasLeaderMarker(const DORCopySlot* pSlot)
 {
-    return pSlot[0] == 0x25u &&
-           pSlot[1] == 0x05u &&
-           pSlot[2] == 0x62u &&
-           pSlot[3] == 0xE7u;
+    return DORCopySlotHasKnownOccupiedMarker(pSlot) &&
+           pSlot->Fields.DeckLeaderState == DORCopySlotDeckLeaderStateLeader;
 }
 
-static int DORCardCopySlotIsEmpty(const uint8_t* pSlot)
+static int DORCopySlotIsEmpty(const DORCopySlot* pSlot)
 {
-    static const uint8_t EmptySlot[DORCardCopySlotSize] = {0};
-    static const uint8_t EmptySlotC0[DORCardCopySlotSize] = {
-        0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0xC0u
-    };
-
-    return DORBytesEqual(pSlot, EmptySlot, sizeof(EmptySlot)) ||
-           DORBytesEqual(pSlot, EmptySlotC0, sizeof(EmptySlotC0));
+    return pSlot->Fields.Marker0 == 0x00u &&
+           pSlot->Fields.Marker1 == 0x00u &&
+           pSlot->Fields.Marker2 == 0x00u &&
+           pSlot->Fields.DeckLeaderState == 0x00u &&
+           pSlot->Fields.Unknown04 == 0x00u &&
+           pSlot->Fields.Unknown05 == 0x00u &&
+           pSlot->Fields.Unknown06 == 0x00u &&
+           (pSlot->Fields.StorageLocation == 0x00u ||
+            pSlot->Fields.StorageLocation == DORCopySlotStorageLocationChest);
 }
 
 DORStatus DORSave_CreateFromBytes(const uint8_t* pBytes, size_t ByteCount, DORSave** ppOutSave)
@@ -202,7 +193,7 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
         const uint8_t* pSlot = pCopyRecord + DORCardCopySlotOffset + SlotIndex * DORCardCopySlotSize;
 
-        memcpy(pOutInfo->CopySlots[SlotIndex], pSlot, DORCardCopySlotSize);
+        memcpy(pOutInfo->CopySlots[SlotIndex].Bytes, pSlot, DORCardCopySlotSize);
     }
 
     return DORStatusOk;
@@ -218,7 +209,10 @@ uint8_t DORCardInfo_GetChestCopyCount(const DORCardInfo* pInfo)
     }
 
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        if (DORBytesEqual(pInfo->CopySlots[SlotIndex], DORCardCopySlotChest, DORCardCopySlotSize)) {
+        const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
+
+        if (DORCopySlotHasKnownOccupiedMarker(pSlot) &&
+            pSlot->Fields.StorageLocation == DORCopySlotStorageLocationChest) {
             Count++;
         }
     }
@@ -235,14 +229,13 @@ uint8_t DORCardInfo_GetDeckCopyCount(const DORCardInfo* pInfo)
         return 0;
     }
 
-    // TODO: Determine how we can distinguish between what deck this copy is in.
-
-    // iterate 9 slots
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        const uint8_t* pSlot = pInfo->CopySlots[SlotIndex];
+        const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
 
-        if (DORBytesEqual(pSlot, DORCardCopySlotDeck, DORCardCopySlotSize) ||
-            DORBytesEqual(pSlot, DORCardCopySlotDeckA, DORCardCopySlotSize)) {
+        if (DORCopySlotHasKnownOccupiedMarker(pSlot) &&
+            (pSlot->Fields.StorageLocation == DORCopySlotStorageLocationDeckA ||
+             pSlot->Fields.StorageLocation == DORCopySlotStorageLocationDeckB ||
+             pSlot->Fields.StorageLocation == DORCopySlotStorageLocationDeckC)) {
             Count++;
         }
     }
@@ -260,7 +253,7 @@ uint8_t DORCardInfo_GetLeaderMarkerCount(const DORCardInfo* pInfo)
     }
 
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        if (DORCardCopySlotIsLeader(pInfo->CopySlots[SlotIndex])) {
+        if (DORCopySlotHasLeaderMarker(&pInfo->CopySlots[SlotIndex])) {
             Count++;
         }
     }
@@ -278,7 +271,7 @@ uint8_t DORCardInfo_GetTotalCopyCount(const DORCardInfo* pInfo)
     }
 
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        if (!DORCardCopySlotIsEmpty(pInfo->CopySlots[SlotIndex])) {
+        if (!DORCopySlotIsEmpty(&pInfo->CopySlots[SlotIndex])) {
             Count++;
         }
     }

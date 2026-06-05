@@ -102,6 +102,42 @@ typedef enum DORDeckID {
  */
 typedef struct DORSave DORSave;
 
+/** @brief Known values for byte 3 of a card copy slot. */
+typedef enum DORCopySlotDeckLeaderState {
+    DORCopySlotDeckLeaderStateNormal = 0x67u, /**< Normal owned/deck/chest copy marker. */
+    DORCopySlotDeckLeaderStateLeader = 0xE7u  /**< Observed deck leader copy marker. */
+} DORCopySlotDeckLeaderState;
+
+/** @brief Known values for byte 7 of a card copy slot. */
+typedef enum DORCopySlotStorageLocation {
+    DORCopySlotStorageLocationDeckA = 0x00u, /**< Copy is assigned to Deck A. */
+    DORCopySlotStorageLocationDeckB = 0x40u, /**< Copy is assigned to Deck B. */
+    DORCopySlotStorageLocationDeckC = 0x80u, /**< Copy is assigned to Deck C. */
+    DORCopySlotStorageLocationChest = 0xC0u  /**< Copy is owned but not assigned to a saved deck, or is empty when bytes 0..6 are zero. */
+} DORCopySlotStorageLocation;
+
+/**
+ * @brief Raw 8-byte card copy slot with named accessors for observed fields.
+ *
+ *        DOR saves store nine of these per card. The Bytes member preserves
+ *        exact raw access. Fields contains byte-sized views over currently
+ *        understood positions; compare those bytes to DORCopySlot* enum
+ *        constants when interpreting a slot.
+ */
+typedef union DORCopySlot {
+    uint8_t Bytes[DORCardCopySlotByteCount]; /**< Exact raw copy-slot bytes. */
+    struct {
+        uint8_t Marker0;            /**< Usually 0x25 for known occupied slots. */
+        uint8_t Marker1;            /**< Usually 0x05 for known occupied slots. */
+        uint8_t Marker2;            /**< Usually 0x62 for known occupied slots. */
+        uint8_t DeckLeaderState;    /**< One of DORCopySlotDeckLeaderState for known occupied slots. */
+        uint8_t Unknown04;          /**< Unconfirmed byte; commonly 0x00 in clean samples. */
+        uint8_t Unknown05;          /**< Unconfirmed byte; commonly 0x00 in clean samples. */
+        uint8_t Unknown06;          /**< Unconfirmed byte; commonly 0x00 in clean samples. */
+        uint8_t StorageLocation;    /**< One of DORCopySlotStorageLocation for known occupied slots. */
+    } Fields; /**< Named byte-level view over the raw copy-slot bytes. */
+} DORCopySlot;
+
 /**
  * @brief DORCardInfo Represents a singular card information entry in the save data.
  *        There should be one for each card in the game in a save.
@@ -113,7 +149,7 @@ typedef struct DORCardInfo {
     uint16_t Experience;            /**< The amount of experience points this card has. 0 - 65535 */
     uint32_t StateMarker;           /**< First 4 bytes of copy slot 0. Often 0x67620525. */
     uint32_t Unknown08;             /**< Last 4 bytes of copy slot 0. Often indicates copy location/state. */
-    uint8_t  CopySlots[DORCardCopySlotCount][DORCardCopySlotByteCount]; /**< Raw per-copy slot bytes for this card. */
+    DORCopySlot CopySlots[DORCardCopySlotCount]; /**< Raw per-copy slot bytes for this card. */
 } DORCardInfo;
 
 /**

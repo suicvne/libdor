@@ -78,7 +78,7 @@ static void PrintCopySlots(const DORCardInfo* pCardInfo)
         printf("        ");
         for (ByteIndex = 0; ByteIndex < DORCardCopySlotByteCount; ByteIndex++) {
             printf("%02X%s",
-                   (unsigned)pCardInfo->CopySlots[SlotIndex][ByteIndex],
+                   (unsigned)pCardInfo->CopySlots[SlotIndex].Bytes[ByteIndex],
                    ByteIndex + 1u == DORCardCopySlotByteCount ? "" : " ");
         }
         printf("\n");
