@@ -15,26 +15,26 @@
 #define DORPlayerNameOffset 0x0FFC8u    /** @brief Offset into save where player name specifically is. */
 
 struct DORSave {
-    uint8_t* pBytes;
-    size_t ByteCount;
+    uint8_t* pBytes;  /**< ptr to raw bytes of DOR Save */
+    size_t ByteCount; /**< length of bytes in pBytes */
 };
 
 /**
- * @brief Card ID -> static UTF8 name lookup.
- * @returns static UTF8 string representing name of card given ID.
+ * @brief Card ID -> static ASCII name lookup.
+ * @returns static ASCII string representing name of card given ID.
  */
 const char* DORCardNameLookup(uint16_t CardId);
 
 /**
- * @brief Decodes a singular Duelists of the Roses character to a UTF8 char.
+ * @brief Decodes a singular Duelists of the Roses character to an ASCII char.
  * @param [in] Code DOR Char Code
- * @returns UTF8 char
+ * @returns ASCII char
  */
 char DORText_DecodeCharacter(uint8_t Code);
 
 /**
- * @brief Encodes singular UTF8 character into a DOR Char Code.
- * @param [in] Character UTF8 char code.
+ * @brief Encodes singular ASCII character into a DOR Char Code.
+ * @param [in] Character ASCII char code.
  * @param [out] pOutCode Pointer to store DOR Char code
  * @returns Status 1 = Success; 0 = Failure.
  */

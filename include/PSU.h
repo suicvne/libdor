@@ -39,12 +39,12 @@ typedef struct PSUArchive PSUArchive;
  * @brief PSUEntryInfo Represents a single entry in a .psu archive.
  */
 typedef struct PSUEntryInfo {
-    uint32_t Mode;
-    uint32_t Size;
-    uint32_t Type;
-    size_t EntryOffset;
-    size_t PayloadOffset;
-    char Name[256];
+    uint32_t Mode;          /**< mode of the entry */
+    uint32_t Size;          /**< byte size of entry */
+    uint32_t Type;          /**< type of entry */
+    size_t EntryOffset;     /**< offset of entry  */
+    size_t PayloadOffset;   /**< data payload offset */
+    char Name[256];         /**< Friendly name of the entry */
 } PSUEntryInfo;
 
 // =========================================== PSUArchive Ctors/Dtors ===========================================

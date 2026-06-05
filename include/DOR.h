@@ -17,11 +17,20 @@
 extern "C" {
 #endif
 
-#define DORCardCount            854u        /** @brief Maximum number of cards in the entire game. Also represents maximum ID. */
-#define DORDeckCardCount        40u         /** @brief Maximum number of cards in a single deck. */
-#define DORNameCharacterCount   12u         /** @brief Maximum number of chars in a save name */
-#define DOREmptyCardId          999u        /** @brief ID used to represent an empty or invalid card ID */
-#define DORSaveFileNameNTSC "BASLUS-20515"  /** @brief Name of the save data file name in save file for NTSC. */
+/** @brief Maximum number of cards in the entire game. Also represents maximum ID. */
+#define DORCardCount            854u
+
+/** @brief Maximum number of cards in a single deck. */
+#define DORDeckCardCount        40u
+
+/** @brief Maximum number of chars in a save name */
+#define DORNameCharacterCount   12u
+
+/** @brief ID used to represent an empty or invalid card ID */
+#define DOREmptyCardId          999u
+
+/** @brief Name of the save data file name in save file for NTSC. */
+#define DORSaveFileNameNTSC "BASLUS-20515"
 
 /**
  * @brief DORStatus Status codes for the API and any associated calls.
@@ -92,12 +101,12 @@ typedef struct DORSave DORSave;
  *        There should be one for each card in the game in a save.
  */
 typedef struct DORCardInfo {
-    uint16_t CardId;                /** @brief ID of the card from 000 - 854 */
-    uint8_t  QuantityOrOwned;       /** @brief 0 if not owned, quantity otherwise 0 - 9 */
-    uint8_t  Flags;                 /** @brief Flags specific to this card, these are still relatively unknown. */
-    uint16_t Experience;            /** @brief The amount of experience points this card has. 0 - 65535 */
-    uint32_t StateMarker;           /** @brief State marker unique to each save/name. */
-    uint32_t Unknown08;             /** @brief Currently unknown, padding bytes? */
+    uint16_t CardId;                /**< ID of the card from 000 - 854 */
+    uint8_t  QuantityOrOwned;       /**< 0 if not owned, quantity otherwise 0 - 9 */
+    uint8_t  Flags;                 /**< Flags specific to this card, these are still relatively unknown. */
+    uint16_t Experience;            /**< The amount of experience points this card has. 0 - 65535 */
+    uint32_t StateMarker;           /**< State marker unique to each save/name. */
+    uint32_t Unknown08;             /**< Currently unknown, padding bytes? */
 } DORCardInfo;
 
 /**
@@ -106,9 +115,9 @@ typedef struct DORCardInfo {
  *        DOREmptyCardId in card and leader slots.
  */
 typedef struct DORDeckInfo {
-    uint16_t Cards[DORDeckCardCount]; /** @brief ID of each card in the deck, or DOREmptyCardId. */
-    uint16_t LeaderCardId;            /** @brief Card ID of the leader, or DOREmptyCardId. */
-    uint16_t UnknownAfterLeader;      /** @brief Currently unknown. Padding? */
+    uint16_t Cards[DORDeckCardCount]; /**< ID of each card in the deck, or DOREmptyCardId. */
+    uint16_t LeaderCardId;            /**< Card ID of the leader, or DOREmptyCardId. */
+    uint16_t UnknownAfterLeader;      /**< Currently unknown. Padding? */
 } DORDeckInfo;
 
 // ======================================= DORSave Ctors/Dtors =======================================
@@ -183,21 +192,21 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
 DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInfo* pOutInfo);
 
 /**
- * @brief Attempts to grab the players name as a UTF8-encoded C string.
+ * @brief Attempts to grab the players name as an ASCII C string.
  *        The player's name has its own encoding in Duelists of the Roses. This translates it
- *        to UTF8 for you.
+ *        to ASCII for you.
  *
  *        NOTE: Max player character count is 12.
- *        NOTE: Not all characters have been mapped like symbols or Japanese characters.
+ *        NOTE: Not all characters have been mapped.
  * @param [in] pSave Pointer to the save structure.
- * @param [out] pOutBuffer Pointer to a char buffer to place UTF8 encoded player name in.
+ * @param [out] pOutBuffer Pointer to a char buffer to place ASCII player name in.
  * @param [in] OutBufferSize Size of the buffer pointed to by pOutBuffer.
  * @returns Status indicating if the player's name was able to be written out or not.
  */
 DORStatus DORSave_GetPlayerName(const DORSave* pSave, char* pOutBuffer, size_t OutBufferSize);
 
 /**
- * @brief Attempts to set the player's name on the save given a UTF8-encoded C string.
+ * @brief Attempts to set the player's name on the save given an ASCII C string.
  *        The player's name will be translated to Duelists of the Roses encoding.
  *
  *        Simultaneously, this will update the checksum of the save.
@@ -209,23 +218,23 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
 // ========================================= Misc Members =========================================
 
 /**
- * @brief Returns UTF8 encoded name of a card based on its card ID.
+ * @brief Returns ASCII name of a card based on its card ID.
  * @param [in] CardId ID of the card to lookup.
- * @returns Static UTF8 encoded C-string of the card name, NULL otherwise.
+ * @returns Static ASCII C string of the card name, NULL otherwise.
  */
 const char* DORCard_GetName(uint16_t CardId);
 
 /**
  * @brief Stringifies DORStatus.
  * @param [in] Status Status to stringify
- * @returns Static UTF8 encoded string representing the status.
+ * @returns Static ASCII string representing the status.
  */
 const char* DORStatus_ToString(DORStatus Status);
 
 /**
  * @brief Stringifies DORRank.
  * @param [in] Rank Rank to stringify
- * @returns Static UTF8 encoded string representing the rank.
+ * @returns Static ASCII string representing the rank.
  */
 const char* DORRank_ToString(DORRank Rank);
 
@@ -237,10 +246,10 @@ const char* DORRank_ToString(DORRank Rank);
 DORRank DORRank_FromExperience(uint16_t Experience);
 
 /**
- * @brief Decodes DOR encoded text out to UTF8 C-string.
+ * @brief Decodes DOR encoded text out to an ASCII C string.
  * @param [in] pEncodedText Pointer to DOR encoded text.
  * @param [in] CharacterCount Len of chars in pEncodedText.
- * @returns Allocated UTF8 C-string containing the decoded text.
+ * @returns Allocated ASCII C string containing the decoded text.
  */
 const char* DORText_Decode(const uint16_t* pEncodedText, size_t CharacterCount);
 

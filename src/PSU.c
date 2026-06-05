@@ -5,10 +5,10 @@
 #include <string.h>
 
 struct PSUArchive {
-    uint8_t* pBytes;
-    size_t ByteCount;
-    PSUEntryInfo* pEntries;
-    size_t EntryCount;
+    uint8_t* pBytes;            /**< Pointer to bytes representing archive. */
+    size_t ByteCount;           /**< Length of bytes in pBytes */
+    PSUEntryInfo* pEntries;     /**< Pointer to entries */
+    size_t EntryCount;          /**< Length of entries in pEntries */
 };
 
 static uint32_t PSUReadU32LE(const uint8_t* pBytes)

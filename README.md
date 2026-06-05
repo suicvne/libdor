@@ -9,7 +9,9 @@ Please note, we have currently only tested the US SKU SLUS 20515.
 
 ## Pending
 - Determining where deck leader ability information is stored
+- Determining where rose card count is stored.
 - Writing card data
+- Completion of char lookup table (NTSC symbols)
 - Purpose of `Flags` on `DORCardInfo`
 - Purpose of `StateMarker`, `Unknown08` on `DORCardInfo`
 - Purpose of `UnknownAfterLeader` on `DORDeckInfo`.
