@@ -78,11 +78,12 @@ typedef struct DORCardInfo {
 
 /**
  * @brief DORDeckInfo Represents a singular deck. There are 3 per save.
- *        Cards are stored as IDs.
+ *        Cards are stored as IDs. Empty or incomplete saved decks may use
+ *        DOREmptyCardId in card and leader slots.
  */
 typedef struct DORDeckInfo {
-    uint16_t Cards[DORDeckCardCount]; /** @brief ID of each card in the deck. */
-    uint16_t LeaderCardId;            /** @brief Card ID of the leader. Must be owned. */
+    uint16_t Cards[DORDeckCardCount]; /** @brief ID of each card in the deck, or DOREmptyCardId. */
+    uint16_t LeaderCardId;            /** @brief Card ID of the leader, or DOREmptyCardId. */
     uint16_t UnknownAfterLeader;      /** @brief Currently unknown. Padding? */
 } DORDeckInfo;
 
