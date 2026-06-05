@@ -417,11 +417,6 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
         return DORStatusInvalidArgument;
     }
 
-    // if (DORSave_GetPlayerName(pSave, CurrentName, sizeof(CurrentName)) == DORStatusOk &&
-    //         strcmp(CurrentName, pName) == 0) {
-    //     return DORStatusOk;
-    // }
-
     memcpy(NewNameBytes, pSave->pBytes + DORPlayerNameOffset, sizeof(NewNameBytes));
     for (Index = 0; Index < NameLength; Index++) {
         uint8_t Code;
