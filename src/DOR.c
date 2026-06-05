@@ -39,12 +39,12 @@ static int DORCardRecordOffsetFromCardId(uint16_t CardId, size_t* pOutOffset)
 {
     size_t RecordIndex;
 
-    if (pOutOffset == NULL || CardId >= DORCardCount) {
+    if (pOutOffset == NULL || CardId > DORCardCount) {
         return 0;
     }
 
     RecordIndex = DORCardRecordIndexFromCardId(CardId);
-    if (RecordIndex >= DORCardCount) {
+    if (RecordIndex > DORCardCount) {
         return 0;
     }
 
