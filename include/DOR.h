@@ -53,6 +53,30 @@ typedef enum DORRank {
     DORRankSD
 } DORRank;
 
+/**
+ * @brief DORLeaderAbility Enumeration representing deck leader abilities.
+ */
+typedef enum DORLeaderAbility {
+    DORLeaderAbilityNone = 0,
+
+    DORLeaderAbilityDestroySpecificEnemyType,                 /** @brief Destroys enemy Monster cards of a specific Type when they enter Support Range. */
+    DORLeaderAbilityDirectDamageHalved,                       /** @brief Halves LP damage from direct attacks. */
+    DORLeaderAbilityExtendedSupportRange,                     /** @brief Increases the Deck Leader's Support Range by 1 square. */
+    DORLeaderAbilityImprovedResistanceForSameTypeFriendlies,  /** @brief Protects same-Type friendly Monster Cards within Support Range from Spell and Trap effects. */
+    DORLeaderAbilityIncreasedMovement,                        /** @brief Increases the Deck Leader's movement range by 1 square. */
+    DORLeaderAbilityIncreasedStrengthForSameTypeFriendlies,   /** @brief Increases ATK/DEF of same-Type friendly Monster Cards within Support Range. */
+    DORLeaderAbilityLevelCostReductionForSummoningSameType,   /** @brief Reduces the Summoning Cost of Monster cards of the same Type. */
+    DORLeaderAbilityLPRecovery,                               /** @brief Recovers 50 LP at the end of the player's turn. */
+    DORLeaderAbilityMovementBoostForSameTypeFriendlies,       /** @brief Grants Movement Bonus to same-Type friendly Monster Cards within Support Range. */
+    DORLeaderAbilityOpenOpponentsCard,                        /** @brief Flips enemy cards face-up when they enter Support Range. */
+    DORLeaderAbilitySpellbindSpecificEnemyType,               /** @brief Spellbinds enemy Monster Cards of a specific Type when they enter Support Range. */
+    DORLeaderAbilityTerrainChange,                            /** @brief Transforms the traveled space into a specific terrain type when moving. */
+    DORLeaderAbilityWeakenSpecificEnemyType,                  /** @brief Decreases ATK/DEF of enemy Monster Cards of a specific Type within Support Range. */
+    DORLeaderAbilityBonusSlotReels,                           /** @brief Hidden ability that adds lines for three-in-a-rows in the Graveyard Slot Machine. */
+    DORLeaderAbilityFind,                                     /** @brief Hidden ability that can obtain secret cards by moving to certain spaces. */
+    DORLeaderAbilityDestinyDraw,                              /** @brief Hidden ability that changes the player's draw in certain situations. */
+} DORLeaderAbility;
+
 /** @brief DORDeckID Enumeration representing which saved deck to query. */
 typedef enum DORDeckID {
     A, B, C

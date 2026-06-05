@@ -7,6 +7,14 @@ The intention is that this library can be glued into other tools relating to the
 
 Please note, we have currently only tested the US SKU SLUS 20515.
 
+## Pending
+- Determining where deck leader ability information is stored
+- Writing card data
+- Purpose of `Flags` on `DORCardInfo`
+- Purpose of `StateMarker`, `Unknown08` on `DORCardInfo`
+- Purpose of `UnknownAfterLeader` on `DORDeckInfo`.
+- Independence from psu format.
+
 ## How it works
 `libdor` compiles to a static C23 library, and exposes a series of functions to allow reading save files. PS2 save files have a variety of containers they are held within, and `libdor` includes support for the [.psu format](https://www.psdevwiki.com/ps2/PSU). This is also the format that `uLaunchELF` and other tools, such as `myMC` are able to read and write individual PS2 saves to.
 
