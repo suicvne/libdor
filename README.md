@@ -65,52 +65,53 @@ PSU entries: 8
    4  off=0x00c00 payload=0x00e00 size=0x0000e2a8 mode=0x00008417 name=icon00.ico
    5  off=0x0f200 payload=0x0f400 size=0x0000e698 mode=0x00008417 name=icon02.ico
    6  off=0x1dc00 payload=0x1de00 size=0x0000e2a8 mode=0x00008417 name=icon01.ico
-   7  off=0x2c200 payload=0x2c400 size=0x000100f0 mode=0x00008417 name=BASLUS-20515
+   7  off=0x2c200 payload=0x2c400 size=0x000100f0 mode=0x00008497 name=BASLUS-20515
 DOR game data size: 0x100f0
-DOR checksum: 0x0413
-Player name: Atem
-Deck leader: 78 - Magician of Black Chaos
-Leader XP: 4230 (MAJ), marker=0x67620525
-Unknown after leader: 792
+DOR checksum: 0x94c7
+Player name: Julian
+Player token: B7 72 CF 4D 
+Deck leader: 612 - Maiden of the Aqua
+Leader XP: 500 (2LT), TotalCopies=1
+Stored deck cost: 823
 Deck cards:
-   0: 478 - Aqua Dragon
-   1: 674 - Slate Warrior
-   2:  53 - The Unhappy Maiden
-   3: 704 - Red Medicine
-   4:  87 - Dark Magician Girl
-   5:  81 - Witch's Apprentice
-   6: 191 - Swordsman from a Foreign Land
-   7: 614 - Wings of Wicked Flame
-   8:  26 - Petit Dragon
-   9:  36 - Time Wizard
-  10:  43 - Magician of Faith
-  11: 661 - Griggle
-  12: 853 - Dark Magic Ritual
-  13: 297 - Kuriboh
-  14: 394 - Dancing Elf
-  15: 734 - Magical Neutralizing Force
-  16: 694 - Yami
-  17: 762 - Black Pendant
-  18:  95 - Injection Fairy Lily
-  19:  60 - Dark Magician
-  20: 685 - Monster Reborn
-  21: 377 - Hourglass Of Life
-  22: 699 - Dark Hole
-  23: 801 - Spellbinding Circle
-  24: 705 - Goblin's Secret Remedy
-  25: 712 - Ookazi
-  26: 716 - Dark-Piercing Light
-  27: 625 - Rock Ogre Grotto #1
-  28: 146 - Swordstalker
-  29: 754 - Dark Energy
-  30: 498 - Cannon Soldier
-  31: 795 - Paralyzing Potion
-  32: 796 - Cursebreaker
-  33: 417 - Man-Eater Bug
-  34: 803 - Mesmeric Control
-  35: 804 - Tears of a Mermaid
-  36: 780 - Megamorph
-  37: 823 - Magic Jammer
-  38: 824 - White Hole
-  39: 828 - Negate Attack
+   0: 005 - Koumori Dragon; Copies: 1
+   1: 100 - Aqua Madoor; Copies: 1
+   2: 331 - Megirus Light; Copies: 1
+   3: 336 - Bio Plant; Copies: 1
+   4: 452 - Krokodilus; Copies: 1
+   5: 463 - White Dolphin; Copies: 1
+   6: 473 - Man-eating Black Shark; Copies: 1
+   7: 476 - Kairyu-shin; Copies: 1
+   8: 477 - Takriminos; Copies: 2
+   9: 477 - Takriminos; Copies: 2
+  10: 503 - Mechanical Snail; Copies: 1
+  11: 547 - Bolt Penguin; Copies: 1
+  12: 550 - Fiend Kraken; Copies: 1
+  13: 555 - Akihiron; Copies: 1
+  14: 556 - The Melting Red Shadow; Copies: 1
+  15: 558 - Turtle Tiger; Copies: 1
+  16: 562 - Twin Long Rods #1; Copies: 1
+  17: 564 - Hitodenchak; Copies: 1
+  18: 568 - The Furious Sea King; Copies: 1
+  19: 571 - Psychic Kappa; Copies: 1
+  20: 572 - Flying Penguin; Copies: 1
+  21: 583 - Giant Red Seasnake; Copies: 1
+  22: 586 - Kanikabuto; Copies: 1
+  23: 587 - Zarigun; Copies: 2
+  24: 587 - Zarigun; Copies: 2
+  25: 588 - Sea Kamen; Copies: 2
+  26: 588 - Sea Kamen; Copies: 2
+  27: 589 - Ameba; Copies: 1
+  28: 590 - Yado Karu; Copies: 1
+  29: 591 - Turtle Raccoon; Copies: 1
+  30: 593 - Star Boy; Copies: 1
+  31: 600 - Penguin Soldier; Copies: 1
+  32: 601 - Liquid Beast; Copies: 1
+  33: 606 - Night Lizard; Copies: 2
+  34: 606 - Night Lizard; Copies: 2
+  35: 669 - Tentacle Plant; Copies: 1
+  36: 718 - The Eye of Truth; Copies: 1
+  37: 742 - Aqua Chorus; Copies: 1
+  38: 777 - Power of Kaishin; Copies: 1
+  39: 804 - Tears of a Mermaid; Copies: 1
 ```
