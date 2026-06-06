@@ -67,6 +67,8 @@ static int DORCopySlotIsEmpty(const DORCopySlot* pSlot)
             pSlot->Fields.StorageLocation == DORCopySlotStorageLocationChest);
 }
 
+// ========================================= DORSave =========================================
+
 DORStatus DORSave_CreateFromBytes(const uint8_t* pBytes, size_t ByteCount, DORSave** ppOutSave)
 {
     DORSave* pSave;
@@ -147,81 +149,6 @@ uint16_t DORSave_GetChecksum(const DORSave* pSave)
     return DORReadU16LE(pSave->pBytes + DORChecksumOffset);
 }
 
-static int DORChecksum_ValidateDeltaSpan(const uint8_t* pOldBytes, const uint8_t* pNewBytes, size_t ByteCount)
-{
-    return ByteCount == 0u || (pOldBytes != NULL && pNewBytes != NULL);
-}
-
-uint16_t DORChecksum_Calculate(const DORSave* pSave)
-{
-    /*
-       This had to be reverse engineered from the game's disassembled MIPS code.
-       The checksum routine is located at 0x00241190..0x002411F8
-
-       How did I do this?
-       I started off by taking the set of bytes representing the player name and finding
-       all possible memory locations. Then, I started tracking reads/writes.
-
-       What I found out is that it's not recalculated on overwrite, only recalculated when you
-       load or save for the first time. The checksum gets calculated somewhere else.
-
-       Eventually I came across 00241190
-
-        00241190  lhu   a3,0x2(a0)        ; read stored checksum
-        00241194  paddub a2,zero,zero     ; accumulator = 0
-        00241198  paddub t0,zero,zero     ; word index/count = 0
-        0024119C  paddub t1,a0,zero       ; pointer = save base
-        002411A0  ori   v1,zero,0x8078    ; word count = 0x8078
-        002411A4  beq   zero,zero,0x002411C8
-        002411A8  sh    zero,0x2(a0)      ; zero checksum field
-
-        002411AC  lhu   a1,0x0(t1)        ; read next u16
-        002411B0  addiu v0,t0,0x1
-        002411B4  andi  t0,v0,0xFFFF      ; count++
-        002411B8  xor   v0,a2,a1          ; accumulator ^= word
-        002411BC  addiu t1,t1,0x2         ; pointer += 2
-        002411C0  andi  a2,v0,0xFFFF      ; accumulator &= 0xFFFF
-        002411C4  nop
-
-        002411C8  andi  v0,t0,0xFFFF
-        002411CC  slt   v0,v0,v1          ; count < 0x8078?
-        002411D0  bne   v0,zero,0x002411AC
-        002411D4  nop
-
-        002411D8  xori  v1,a2,0x4C6B      ; final checksum = accumulator ^ 0x4C6B
-        002411DC  andi  v0,a3,0xFFFF      ; stored checksum
-        002411E0  andi  a2,v1,0xFFFF      ; calculated checksum
-        002411E4  bne   a2,v0,0x002411F4  ; compare calculated vs stored
-        002411E8  sh    v1,0x2(a0)        ; restore/write calculated checksum
-
-        002411EC  beq   zero,zero,0x002411F8
-        002411F0  addiu v0,zero,0x1       ; return true
-
-        002411F4  paddub v0,zero,zero     ; return false
-        002411F8  jr    ra
-        002411FC  nop
-     */
-
-    size_t Index;
-    uint16_t Temp = 0x0000u;
-
-    if (pSave == NULL || pSave->pBytes == NULL || pSave->ByteCount < DORGameDataSize) {
-        return 0;
-    }
-
-    // Read every 2 bytes as a U16 and XOR it onto our Temp.
-    for (Index = 0; Index < DORGameDataSize; Index += 2u) {
-        if (Index == DORChecksumOffset) {
-            continue;
-        }
-
-        Temp ^= DORReadU16LE(pSave->pBytes + Index);
-    }
-
-    // then at the end, XOR by our magic 0x4C6B
-    return (uint16_t)(Temp ^ 0x4C6Bu);
-}
-
 DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo* pOutInfo)
 {
     size_t Offset;
@@ -266,102 +193,6 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
     return DORStatusOk;
 }
 
-uint8_t DORCardInfo_GetChestCopyCount(const DORCardInfo* pInfo)
-{
-    size_t SlotIndex;
-    uint8_t Count = 0;
-
-    if (pInfo == NULL) {
-        return 0;
-    }
-
-    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
-
-        if (!DORCopySlotIsEmpty(pSlot) &&
-            DORCopySlot_GetStorageLocation(pSlot) == DORCopySlotStorageLocationChest) {
-            Count++;
-        }
-    }
-
-    return Count;
-}
-
-uint8_t DORCardInfo_GetDeckCopyCount(const DORCardInfo* pInfo)
-{
-    size_t SlotIndex;
-    uint8_t Count = 0;
-
-    if (pInfo == NULL) {
-        return 0;
-    }
-
-    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
-        DORCopySlotStorageLocation StorageLoc = DORCopySlot_GetStorageLocation(pSlot);
-
-        if(!DORCopySlotIsEmpty(pSlot) && StorageLoc != DORCopySlotStorageLocationChest) {
-            Count++;
-        }
-    }
-
-    return Count;
-}
-
-uint8_t DORCardInfo_GetLeaderMarkerCount(const DORCardInfo* pInfo)
-{
-    size_t SlotIndex;
-    uint8_t Count = 0;
-
-    if (pInfo == NULL) {
-        return 0;
-    }
-
-    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        if (DORCopySlot_IsLeader(&pInfo->CopySlots[SlotIndex])) {
-            Count++;
-        }
-    }
-
-    return Count;
-}
-
-uint8_t DORCardInfo_GetTotalCopyCount(const DORCardInfo* pInfo)
-{
-    size_t SlotIndex;
-    uint8_t Count = 0;
-
-    if (pInfo == NULL) {
-        return 0;
-    }
-
-    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        if (!DORCopySlotIsEmpty(&pInfo->CopySlots[SlotIndex])) {
-            Count++;
-        }
-    }
-
-    return Count;
-}
-
-static int DORDeckInfo_IsPresent(const DORDeckInfo* pInfo)
-{
-    size_t Index;
-
-    if (pInfo == NULL || pInfo->LeaderCardId == DOREmptyCardId) {
-        return 0;
-    }
-
-    for (Index = 0; Index < DORDeckCardCount; Index++) {
-        if (pInfo->Cards[Index] != DOREmptyCardId) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-
 DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInfo* pOutInfo)
 {
     size_t DeckOffset;
@@ -392,57 +223,6 @@ DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInf
     pOutInfo->LeaderCardId = DORReadU16LE(pSave->pBytes + LeaderOffset);
     pOutInfo->StoredDeckCost = DORReadU16LE(pSave->pBytes + LeaderOffset + 2u);
     return DORStatusOk;
-}
-
-const char* DORCard_GetName(uint16_t CardId) { return DORCardNameLookup(CardId); }
-
-const char* DORStatus_ToString(DORStatus Status)
-{
-    switch (Status) {
-    case DORStatusOk: return "Ok";
-    case DORStatusInvalidArgument: return "InvalidArgument";
-    case DORStatusInvalidFormat: return "InvalidFormat";
-    case DORStatusNotFound: return "NotFound";
-    case DORStatusOutOfMemory: return "OutOfMemory";
-    default: return "Unknown";
-    }
-}
-
-const char* DORRank_ToString(DORRank Rank)
-{
-    switch (Rank) {
-    case DORRankNCO: return "NCO";
-    case DORRank2LT: return "2LT";
-    case DORRank1LT: return "1LT";
-    case DORRankCPT: return "CPT";
-    case DORRankMAJ: return "MAJ";
-    case DORRankLTC: return "LTC";
-    case DORRankCOL: return "COL";
-    case DORRankBG: return "BG";
-    case DORRankRADM: return "RADM";
-    case DORRankVADM: return "VADM";
-    case DORRankADM: return "ADM";
-    case DORRankSADM: return "SADM";
-    case DORRankSD: return "SD";
-    default: return "Unknown";
-    }
-}
-
-DORRank DORRank_FromExperience(uint16_t Experience)
-{
-    if (Experience == 65535u) return DORRankSD;
-    if (Experience >= 52000u) return DORRankSADM;
-    if (Experience >= 40000u) return DORRankADM;
-    if (Experience >= 30000u) return DORRankVADM;
-    if (Experience >= 22000u) return DORRankRADM;
-    if (Experience >= 16000u) return DORRankBG;
-    if (Experience >= 11000u) return DORRankCOL;
-    if (Experience >= 7000u) return DORRankLTC;
-    if (Experience >= 4000u) return DORRankMAJ;
-    if (Experience >= 2000u) return DORRankCPT;
-    if (Experience >= 1000u) return DORRank1LT;
-    if (Experience >= 500u) return DORRank2LT;
-    return DORRankNCO;
 }
 
 DORStatus DORSave_GetPlayerName(const DORSave* pSave, char* pOutBuffer, size_t OutBufferSize)
@@ -532,6 +312,176 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
     return DORStatusOk;
 }
 
+// ========================================= DORSave =========================================
+
+// ======================================= DORCardInfo =======================================
+
+uint8_t DORCardInfo_GetChestCopyCount(const DORCardInfo* pInfo)
+{
+    size_t SlotIndex;
+    uint8_t Count = 0;
+
+    if (pInfo == NULL) {
+        return 0;
+    }
+
+    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
+        const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
+
+        if (!DORCopySlotIsEmpty(pSlot) &&
+            DORCopySlot_GetStorageLocation(pSlot) == DORCopySlotStorageLocationChest) {
+            Count++;
+        }
+    }
+
+    return Count;
+}
+
+uint8_t DORCardInfo_GetDeckCopyCount(const DORCardInfo* pInfo)
+{
+    size_t SlotIndex;
+    uint8_t Count = 0;
+
+    if (pInfo == NULL) {
+        return 0;
+    }
+
+    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
+        const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
+        DORCopySlotStorageLocation StorageLoc = DORCopySlot_GetStorageLocation(pSlot);
+
+        if(!DORCopySlotIsEmpty(pSlot) && StorageLoc != DORCopySlotStorageLocationChest) {
+            Count++;
+        }
+    }
+
+    return Count;
+}
+
+uint8_t DORCardInfo_GetLeaderMarkerCount(const DORCardInfo* pInfo)
+{
+    size_t SlotIndex;
+    uint8_t Count = 0;
+
+    if (pInfo == NULL) {
+        return 0;
+    }
+
+    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
+        if (DORCopySlot_IsLeader(&pInfo->CopySlots[SlotIndex])) {
+            Count++;
+        }
+    }
+
+    return Count;
+}
+
+uint8_t DORCardInfo_GetTotalCopyCount(const DORCardInfo* pInfo)
+{
+    size_t SlotIndex;
+    uint8_t Count = 0;
+
+    if (pInfo == NULL) {
+        return 0;
+    }
+
+    for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
+        if (!DORCopySlotIsEmpty(&pInfo->CopySlots[SlotIndex])) {
+            Count++;
+        }
+    }
+
+    return Count;
+}
+
+// ======================================= DORCardInfo =======================================
+
+// ======================================= DORDeckInfo =======================================
+
+static int DORDeckInfo_IsPresent(const DORDeckInfo* pInfo)
+{
+    size_t Index;
+
+    if (pInfo == NULL || pInfo->LeaderCardId == DOREmptyCardId) {
+        return 0;
+    }
+
+    for (Index = 0; Index < DORDeckCardCount; Index++) {
+        if (pInfo->Cards[Index] != DOREmptyCardId) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+// ======================================= DORDeckInfo =======================================
+
+// ========================================= DORCard =========================================
+
+const char* DORCard_GetName(uint16_t CardId) { return DORCardNameLookup(CardId); }
+
+// ========================================= DORCard =========================================
+
+// ======================================== DORStatus ========================================
+
+const char* DORStatus_ToString(DORStatus Status)
+{
+    switch (Status) {
+    case DORStatusOk: return "Ok";
+    case DORStatusInvalidArgument: return "InvalidArgument";
+    case DORStatusInvalidFormat: return "InvalidFormat";
+    case DORStatusNotFound: return "NotFound";
+    case DORStatusOutOfMemory: return "OutOfMemory";
+    default: return "Unknown";
+    }
+}
+
+// ======================================== DORStatus ========================================
+
+// ========================================= DORRank =========================================
+
+const char* DORRank_ToString(DORRank Rank)
+{
+    switch (Rank) {
+    case DORRankNCO: return "NCO";
+    case DORRank2LT: return "2LT";
+    case DORRank1LT: return "1LT";
+    case DORRankCPT: return "CPT";
+    case DORRankMAJ: return "MAJ";
+    case DORRankLTC: return "LTC";
+    case DORRankCOL: return "COL";
+    case DORRankBG: return "BG";
+    case DORRankRADM: return "RADM";
+    case DORRankVADM: return "VADM";
+    case DORRankADM: return "ADM";
+    case DORRankSADM: return "SADM";
+    case DORRankSD: return "SD";
+    default: return "Unknown";
+    }
+}
+
+DORRank DORRank_FromExperience(uint16_t Experience)
+{
+    if (Experience == 65535u) return DORRankSD;
+    if (Experience >= 52000u) return DORRankSADM;
+    if (Experience >= 40000u) return DORRankADM;
+    if (Experience >= 30000u) return DORRankVADM;
+    if (Experience >= 22000u) return DORRankRADM;
+    if (Experience >= 16000u) return DORRankBG;
+    if (Experience >= 11000u) return DORRankCOL;
+    if (Experience >= 7000u) return DORRankLTC;
+    if (Experience >= 4000u) return DORRankMAJ;
+    if (Experience >= 2000u) return DORRankCPT;
+    if (Experience >= 1000u) return DORRank1LT;
+    if (Experience >= 500u) return DORRank2LT;
+    return DORRankNCO;
+}
+
+// ========================================= DORRank =========================================
+
+// ======================================= DORCopySlot =======================================
+
 DORCopySlotStorageLocation DORCopySlot_GetStorageLocation(const DORCopySlot* pCopySlot)
 {
     if(pCopySlot == NULL) { return DORCopySlotStorageLocationChest; }
@@ -547,3 +497,79 @@ int DORCopySlot_IsLeader(const DORCopySlot* pCopySlot)
 
     return (pCopySlot->Fields.DeckLeaderState & 0x80u) != 0u;
 }
+
+// ======================================= DORCopySlot =======================================
+
+// ======================================= DORChecksum =======================================
+
+uint16_t DORChecksum_Calculate(const DORSave* pSave)
+{
+    /*
+       This had to be reverse engineered from the game's disassembled MIPS code.
+       The checksum routine is located at 0x00241190..0x002411F8
+
+       How did I do this?
+       I started off by taking the set of bytes representing the player name and finding
+       all possible memory locations. Then, I started tracking reads/writes.
+
+       What I found out is that it's not recalculated on overwrite, only recalculated when you
+       load or save for the first time. The checksum gets calculated somewhere else.
+
+       Eventually I came across 00241190
+
+        00241190  lhu   a3,0x2(a0)        ; read stored checksum
+        00241194  paddub a2,zero,zero     ; accumulator = 0
+        00241198  paddub t0,zero,zero     ; word index/count = 0
+        0024119C  paddub t1,a0,zero       ; pointer = save base
+        002411A0  ori   v1,zero,0x8078    ; word count = 0x8078
+        002411A4  beq   zero,zero,0x002411C8
+        002411A8  sh    zero,0x2(a0)      ; zero checksum field
+
+        002411AC  lhu   a1,0x0(t1)        ; read next u16
+        002411B0  addiu v0,t0,0x1
+        002411B4  andi  t0,v0,0xFFFF      ; count++
+        002411B8  xor   v0,a2,a1          ; accumulator ^= word
+        002411BC  addiu t1,t1,0x2         ; pointer += 2
+        002411C0  andi  a2,v0,0xFFFF      ; accumulator &= 0xFFFF
+        002411C4  nop
+
+        002411C8  andi  v0,t0,0xFFFF
+        002411CC  slt   v0,v0,v1          ; count < 0x8078?
+        002411D0  bne   v0,zero,0x002411AC
+        002411D4  nop
+
+        002411D8  xori  v1,a2,0x4C6B      ; final checksum = accumulator ^ 0x4C6B
+        002411DC  andi  v0,a3,0xFFFF      ; stored checksum
+        002411E0  andi  a2,v1,0xFFFF      ; calculated checksum
+        002411E4  bne   a2,v0,0x002411F4  ; compare calculated vs stored
+        002411E8  sh    v1,0x2(a0)        ; restore/write calculated checksum
+
+        002411EC  beq   zero,zero,0x002411F8
+        002411F0  addiu v0,zero,0x1       ; return true
+
+        002411F4  paddub v0,zero,zero     ; return false
+        002411F8  jr    ra
+        002411FC  nop
+     */
+
+    size_t Index;
+    uint16_t Temp = 0x0000u;
+
+    if (pSave == NULL || pSave->pBytes == NULL || pSave->ByteCount < DORGameDataSize) {
+        return 0;
+    }
+
+    // Read every 2 bytes as a U16 and XOR it onto our Temp.
+    for (Index = 0; Index < DORGameDataSize; Index += 2u) {
+        if (Index == DORChecksumOffset) {
+            continue;
+        }
+
+        Temp ^= DORReadU16LE(pSave->pBytes + Index);
+    }
+
+    // then at the end, XOR by our magic 0x4C6B
+    return (uint16_t)(Temp ^ 0x4C6Bu);
+}
+
+// ======================================= DORChecksum =======================================
