@@ -215,6 +215,13 @@ const uint8_t* DORSave_GetBytes(const DORSave* pSave);
 uint16_t DORSave_GetChecksum(const DORSave* pSave);
 
 /**
+ * @brief DORChecksum_Calculate INCOMPLETE attempts to recalculate checksum for save
+ * @param [in] pSave Pointer to the save structure.
+ * @return The 16-bit checksum we calculated.
+ */
+uint16_t DORChecksum_Calculate(const DORSave* pSave);
+
+/**
  * @brief Calculates a DOR checksum delta after profile identity bytes change.
  *
  *        Current evidence indicates the save checksum is adjusted by byte deltas

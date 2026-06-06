@@ -165,6 +165,29 @@ static int DORChecksum_ValidateDeltaSpan(const uint8_t* pOldBytes, const uint8_t
     return ByteCount == 0u || (pOldBytes != NULL && pNewBytes != NULL);
 }
 
+uint16_t DORChecksum_Calculate(const DORSave* pSave)
+{
+    size_t Index = 0;
+    size_t ReadBytes = 0;
+    uint16_t Temp = 0x0000;
+
+    // name bytes.
+    uint8_t RawNameBytes[16] = { 0 };
+    DORSave_GetRawPlayerNameBytes(pSave, (const uint8_t**)&RawNameBytes, &ReadBytes);
+    for(Index = 0; Index < ReadBytes; Index++) {
+        Temp += (int)RawNameBytes[Index];
+    }
+
+    // profile token bytes
+    uint8_t ProfileTokenBytes[16] = { 0 };
+    DORSave_GetProfileTokenBytes(pSave, (const uint8_t**)&ProfileTokenBytes, &ReadBytes );
+    for(Index = 0; Index < ReadBytes; Index++) {
+        Temp += (int)ProfileTokenBytes[Index];
+    }
+
+    return Temp;
+}
+
 uint16_t DORChecksum_CalculateDelta(
     uint16_t CurrentChecksum,
     const uint8_t* pOldProfileTokenBytes,
@@ -474,14 +497,15 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
         NewNameBytes[Index * 2u + 1u] = (Index + 1u == NameLength) ? 0xA0u : 0x20u;
     }
 
-    Checksum = DORChecksum_CalculateDelta(
-        DORReadU16LE(pSave->pBytes + DORChecksumOffset),
-        pSave->pBytes + DORProfileBlockOffset,
-        pSave->pBytes + DORProfileBlockOffset,
-        DORProfileTokenSize,
-        pSave->pBytes + DORPlayerNameOffset,
-        NewNameBytes,
-        sizeof(NewNameBytes));
+    // Checksum = DORChecksum_CalculateDelta(
+    //     DORReadU16LE(pSave->pBytes + DORChecksumOffset),
+    //     pSave->pBytes + DORProfileBlockOffset,
+    //     pSave->pBytes + DORProfileBlockOffset,
+    //     DORProfileTokenSize,
+    //     pSave->pBytes + DORPlayerNameOffset,
+    //     NewNameBytes,
+    //     sizeof(NewNameBytes));
+    Checksum = DORChecksum_Calculate(pSave);
     memcpy(pSave->pBytes + DORPlayerNameOffset, NewNameBytes, sizeof(NewNameBytes));
 
     DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
