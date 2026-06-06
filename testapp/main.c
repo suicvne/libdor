@@ -91,41 +91,54 @@ static void PrintDeck(const DORSave* pSave, int ExtendedInfo)
     DORCardInfo LeaderInfo;
     char Name[128];
     size_t Index;
+    size_t ProfileTokenLen;
+    const uint8_t* pProfileToken = NULL;
 
+    // print player name.
     if (DORSave_GetPlayerName(pSave, Name, sizeof(Name)) == DORStatusOk) {
         printf("Player name: %s\n", Name);
     }
 
-    if (DORSave_GetDeckInfo(pSave, A, &Deck) != DORStatusOk) {
+    // print profile token.
+    if(DORSave_GetProfileTokenBytes(pSave, &pProfileToken, &ProfileTokenLen) == DORStatusOk) {
+        printf("Player token: ");
+        for(int i = 0; i < ProfileTokenLen; i++) {
+            printf("%02X ", pProfileToken[i]);
+        }
+        printf("\n");
+    }
+
+    // print deck leader info
+    if (DORSave_GetDeckInfo(pSave, DORDeckA, &Deck) != DORStatusOk) {
         printf("Could not read DOR deck block.\n");
         return;
     }
 
     printf("Deck leader: %u - %s\n", Deck.LeaderCardId, DORCard_GetName(Deck.LeaderCardId));
     if (DORSave_GetCardInfo(pSave, Deck.LeaderCardId, &LeaderInfo) == DORStatusOk) {
-        printf("Leader XP: %u (%s), marker=0x%08x, TotalCopies=%u\n",
+        printf("Leader XP: %u (%s), TotalCopies=%u\n",
                (unsigned)LeaderInfo.Experience,
                DORRank_ToString(DORRank_FromExperience(LeaderInfo.Experience)),
-               (unsigned)LeaderInfo.StateMarker,
                DORCardInfo_GetTotalCopyCount(&LeaderInfo)
         );
     }
     printf("Stored deck cost: %u\n", Deck.StoredDeckCost);
 
+    // print each card in Deck A.
     printf("Deck cards:\n");
     DORCardInfo CardInfo;
     for (Index = 0; Index < DORDeckCardCount; Index++) {
         uint16_t CardId = Deck.Cards[Index];
 
         if (DORSave_GetCardInfo(pSave, CardId, &CardInfo) != DORStatusOk) {
-            printf("  %2lu: %3u - %s; Copies: unavailable\n",
+            printf("  %2lu: %03u - %s; Copies: unavailable\n",
                    (unsigned long)Index,
                    (unsigned)CardId,
                    DORCard_GetName(CardId));
             continue;
         }
 
-        printf("  %2lu: %3u - %s; Copies: %u\n",
+        printf("  %2lu: %03u - %s; Copies: %u\n",
                (unsigned long)Index,
                (unsigned)CardId,
                DORCard_GetName(CardId),

@@ -12,9 +12,7 @@ Please note, we have currently only tested the US SKU SLUS 20515.
 - Determining where rose card count is stored.
 - Determining where "newcomer sort" metadata is stored.
 - Writing card data
-- Completion of char lookup table (NTSC symbols)
 - Purpose of `Flags` on `DORCardInfo`
-- Purpose of `StateMarker`, `Unknown08` on `DORCardInfo`
 - Purpose of `UnknownAfterLeader` on `DORDeckInfo`.
 - Independence from psu format.
 
