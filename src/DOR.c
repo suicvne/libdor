@@ -173,8 +173,6 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
     pOutInfo->QuantityOrOwned = pRecord[0x00];
     pOutInfo->Flags = pRecord[0x01];
     pOutInfo->Experience = DORReadU16LE(pRecord + 0x02);
-    pOutInfo->StateMarker = DORReadU32LE(pRecord + 0x04);
-    pOutInfo->Unknown08 = DORReadU32LE(pRecord + 0x08);
 
     // copy record offset -- offset into the copy record array.
     CopyOffset = DORCardRecordsOffset + (size_t)CardId * DORCardRecordSize;
@@ -203,18 +201,21 @@ DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInf
     if (pSave == NULL || pOutInfo == NULL) {
         return DORStatusInvalidArgument;
     }
-    if (DeckID != A && DeckID != B && DeckID != C) {
+    if (DeckID != DORDeckA && DeckID != DORDeckB && DeckID != DORDeckC) {
         return DORStatusInvalidArgument;
     }
 
+    // calculate offsets needed
     DeckOffset = (size_t)DeckID * DORDeckRecordSize;
     CardsOffset = DORDeckCardsOffset + DeckOffset;
     LeaderOffset = DORDeckLeaderOffset + DeckOffset;
 
+    // bounds checking
     if (LeaderOffset + 4u > pSave->ByteCount) {
         return DORStatusInvalidFormat;
     }
 
+    // occupy DORDeckInfo structure
     memset(pOutInfo, 0, sizeof(*pOutInfo));
     for (Index = 0; Index < DORDeckCardCount; Index++) {
         pOutInfo->Cards[Index] = DORReadU16LE(pSave->pBytes + CardsOffset + Index * 2u);
@@ -489,10 +490,10 @@ DORCopySlotStorageLocation DORCopySlot_GetStorageLocation(const DORCopySlot* pCo
     return pCopySlot->Fields.StorageLocation & 0xC0u;
 }
 
-int DORCopySlot_IsLeader(const DORCopySlot* pCopySlot)
+bool DORCopySlot_IsLeader(const DORCopySlot* pCopySlot)
 {
     if (pCopySlot == NULL) {
-        return 0;
+        return false;
     }
 
     return (pCopySlot->Fields.DeckLeaderState & 0x80u) != 0u;

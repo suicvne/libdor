@@ -18,25 +18,25 @@ extern "C" {
 #endif
 
 /** @brief Maximum number of cards in the entire game. Also represents maximum ID. */
-#define DORCardCount            854u
+#define DORCardCount                854u
 
 /** @brief Maximum number of save slots for copies of a single card. */
-#define DORCardCopySlotCount    9u
+#define DORCardCopySlotCount        9u
 
 /** @brief Number of bytes in one save slot for a card copy. */
-#define DORCardCopySlotByteCount 8u
+#define DORCardCopySlotByteCount    8u
 
 /** @brief Maximum number of cards in a single deck. */
-#define DORDeckCardCount        40u
+#define DORDeckCardCount            40u
 
 /** @brief Maximum number of chars in a save name */
-#define DORNameCharacterCount   12u
+#define DORNameCharacterCount       12u
 
 /** @brief ID used to represent an empty or invalid card ID */
-#define DOREmptyCardId          999u
+#define DOREmptyCardId              999u
 
 /** @brief Name of the save data file name in save file for NTSC. */
-#define DORSaveFileNameNTSC "BASLUS-20515"
+#define DORSaveFileNameNTSC         "BASLUS-20515"
 
 /**
  * @brief DORStatus Status codes for the API and any associated calls.
@@ -94,7 +94,7 @@ typedef enum DORLeaderAbility {
 
 /** @brief DORDeckID Enumeration representing which saved deck to query. */
 typedef enum DORDeckID {
-    A, B, C
+    DORDeckA, DORDeckB, DORDeckC
 } DORDeckID;
 
 /**
@@ -155,8 +155,6 @@ typedef struct DORCardInfo {
     uint8_t  QuantityOrOwned;       /**< First byte of the card record header. Not a reliable chest count. */
     uint8_t  Flags;                 /**< Flags specific to this card, these are still relatively unknown. */
     uint16_t Experience;            /**< The amount of experience points this card has. 0 - 65535 */
-    uint32_t StateMarker;           /**< First 4 bytes of copy slot 0. Often 0x67620525. */
-    uint32_t Unknown08;             /**< Last 4 bytes of copy slot 0. Often indicates copy location/state. */
     DORCopySlot CopySlots[DORCardCopySlotCount]; /**< Raw per-copy slot bytes for this card. */
 } DORCardInfo;
 
@@ -306,7 +304,7 @@ DORCopySlotStorageLocation DORCopySlot_GetStorageLocation(const DORCopySlot* pCo
  * @param [in] pCopySlot copy slot to check storage location for.
  * @returns 1 for true, 0 otherwise.
  */
-int DORCopySlot_IsLeader(const DORCopySlot* pCopySlot);
+bool DORCopySlot_IsLeader(const DORCopySlot* pCopySlot);
 
 /**
  * @brief Counts raw copy slots matching the complete-save chest-like pattern.
