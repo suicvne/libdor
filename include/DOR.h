@@ -208,12 +208,35 @@ size_t DORSave_GetSize(const DORSave* pSave);
 const uint8_t* DORSave_GetBytes(const DORSave* pSave);
 
 /**
- * @brief Returns the calculated checksum for the save.
- *        Seems to be calculated based on player name.
+ * @brief Returns the stored checksum for the save.
  * @param [in] pSave Pointer to the save structure.
- * @returns The 16-byte checksum for this save.
+ * @returns The 16-bit checksum stored in this save.
  */
 uint16_t DORSave_GetChecksum(const DORSave* pSave);
+
+/**
+ * @brief Calculates a DOR checksum delta after profile identity bytes change.
+ *
+ *        Current evidence indicates the save checksum is adjusted by byte deltas
+ *        from the encoded player name and the profile validation token.
+ *
+ * @param [in] CurrentChecksum Current checksum value to update.
+ * @param [in] pOldProfileTokenBytes Previous profile token bytes.
+ * @param [in] pNewProfileTokenBytes New profile token bytes.
+ * @param [in] ProfileTokenByteCount Number of token bytes to compare.
+ * @param [in] pOldNameBytes Previous encoded player name bytes.
+ * @param [in] pNewNameBytes New encoded player name bytes.
+ * @param [in] NameByteCount Number of name bytes to compare.
+ * @returns The updated 16-bit checksum after applying known byte deltas.
+ */
+uint16_t DORChecksum_CalculateDelta(
+    uint16_t CurrentChecksum,
+    const uint8_t* pOldProfileTokenBytes,
+    const uint8_t* pNewProfileTokenBytes,
+    size_t ProfileTokenByteCount,
+    const uint8_t* pOldNameBytes,
+    const uint8_t* pNewNameBytes,
+    size_t NameByteCount);
 
 /**
  * @brief Attempts to grab card information for a given card ID from the save.
