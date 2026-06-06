@@ -7,6 +7,8 @@
 // NOTE: DOR saves are encoded as little endian. No matter what.
 //       All reads and writes have to be LE.
 
+static int DORDeckInfo_IsPresent(const DORDeckInfo* pInfo);
+
 // ======================================== Little endian IO helpers ========================================
 
 static uint16_t DORReadU16LE(const uint8_t* pBytes)
@@ -165,24 +167,87 @@ static int DORChecksum_ValidateDeltaSpan(const uint8_t* pOldBytes, const uint8_t
     return ByteCount == 0u || (pOldBytes != NULL && pNewBytes != NULL);
 }
 
+#include <stdio.h>
+
 uint16_t DORChecksum_Calculate(const DORSave* pSave)
 {
     size_t Index = 0;
     size_t ReadBytes = 0;
     uint16_t Temp = 0x0000;
 
+    // Provisional -- profile token blocks, deck blocks
+    // These fields aren't named or mapped at all, but they exist in the raw bytes.
+    // Profile / state fields
+    for(Index = DORProfileBlockOffset + DORProfileTokenSize; Index < DORPlayerNameOffset; Index++) {
+        Temp += pSave->pBytes[Index];
+    }
+
+    // Scans pre-deck header. Right before Deck A's list.
+    // Reads a card IDs worth of data, adds 1 per "empty card ID" (999).
+    for(Index = DORDeckBlockOffset; Index < DORDeckCardsOffset; Index += 2) {
+        if(DORReadU16LE(pSave->pBytes + Index) == DOREmptyCardId) {
+            Temp += 1;
+        }
+    }
+    // end provisional
+
     // name bytes.
-    uint8_t RawNameBytes[16] = { 0 };
-    DORSave_GetRawPlayerNameBytes(pSave, (const uint8_t**)&RawNameBytes, &ReadBytes);
+    const uint8_t* RawNameBytes = nullptr;
+    DORSave_GetRawPlayerNameBytes(pSave, &RawNameBytes, &ReadBytes);
     for(Index = 0; Index < ReadBytes; Index++) {
         Temp += (int)RawNameBytes[Index];
     }
 
     // profile token bytes
-    uint8_t ProfileTokenBytes[16] = { 0 };
-    DORSave_GetProfileTokenBytes(pSave, (const uint8_t**)&ProfileTokenBytes, &ReadBytes );
+    const uint8_t* ProfileTokenBytes = nullptr;
+    DORSave_GetProfileTokenBytes(pSave, &ProfileTokenBytes, &ReadBytes );
     for(Index = 0; Index < ReadBytes; Index++) {
         Temp += (int)ProfileTokenBytes[Index];
+    }
+
+    // deck costs??
+    DORDeckInfo TempInfo;
+    if(DORSave_GetDeckInfo(pSave, A, &TempInfo) == DORStatusOk)
+    {
+        for(Index = 0; Index < DORDeckCardCount; Index++) {
+            Temp += TempInfo.Cards[Index];
+        }
+
+        if(DORDeckInfo_IsPresent(&TempInfo)) {
+          Temp += (TempInfo.LeaderCardId & 0xFFu);
+          Temp += (TempInfo.LeaderCardId >> 8);
+          Temp += (TempInfo.StoredDeckCost & 0xFFu);
+          Temp += (TempInfo.StoredDeckCost >> 8);
+        }
+    }
+
+
+    if(DORSave_GetDeckInfo(pSave, B, &TempInfo) == DORStatusOk)
+    {
+        for(Index = 0; Index < DORDeckCardCount; Index++) {
+            Temp += TempInfo.Cards[Index];
+        }
+
+        if(DORDeckInfo_IsPresent(&TempInfo)) {
+            Temp += (TempInfo.LeaderCardId & 0xFFu);
+            Temp += (TempInfo.LeaderCardId >> 8);
+            Temp += (TempInfo.StoredDeckCost & 0xFFu);
+            Temp += (TempInfo.StoredDeckCost >> 8);
+        }
+    }
+
+    if(DORSave_GetDeckInfo(pSave, C, &TempInfo) == DORStatusOk)
+    {
+        for(Index = 0; Index < DORDeckCardCount; Index++) {
+            Temp += TempInfo.Cards[Index];
+        }
+
+        if(DORDeckInfo_IsPresent(&TempInfo)) {
+            Temp += (TempInfo.LeaderCardId & 0xFFu);
+            Temp += (TempInfo.LeaderCardId >> 8);
+            Temp += (TempInfo.StoredDeckCost & 0xFFu);
+            Temp += (TempInfo.StoredDeckCost >> 8);
+        }
     }
 
     return Temp;
@@ -334,6 +399,24 @@ uint8_t DORCardInfo_GetTotalCopyCount(const DORCardInfo* pInfo)
 
     return Count;
 }
+
+static int DORDeckInfo_IsPresent(const DORDeckInfo* pInfo)
+{
+    size_t Index;
+
+    if (pInfo == NULL || pInfo->LeaderCardId == DOREmptyCardId) {
+        return 0;
+    }
+
+    for (Index = 0; Index < DORDeckCardCount; Index++) {
+        if (pInfo->Cards[Index] != DOREmptyCardId) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 
 DORStatus DORSave_GetDeckInfo(const DORSave* pSave, DORDeckID DeckID, DORDeckInfo* pOutInfo)
 {
