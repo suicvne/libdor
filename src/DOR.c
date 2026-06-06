@@ -228,34 +228,6 @@ uint16_t DORChecksum_Calculate(const DORSave* pSave)
     return (uint16_t)(Temp ^ 0x4C6Bu);
 }
 
-uint16_t DORChecksum_CalculateDelta(
-    uint16_t CurrentChecksum,
-    const uint8_t* pOldProfileTokenBytes,
-    const uint8_t* pNewProfileTokenBytes,
-    size_t ProfileTokenByteCount,
-    const uint8_t* pOldNameBytes,
-    const uint8_t* pNewNameBytes,
-    size_t NameByteCount)
-{
-    size_t Index;
-    int Delta = 0;
-
-    if (!DORChecksum_ValidateDeltaSpan(pOldProfileTokenBytes, pNewProfileTokenBytes, ProfileTokenByteCount) ||
-            !DORChecksum_ValidateDeltaSpan(pOldNameBytes, pNewNameBytes, NameByteCount)) {
-        return CurrentChecksum;
-    }
-
-    for (Index = 0; Index < ProfileTokenByteCount; Index++) {
-        Delta += (int)pNewProfileTokenBytes[Index] - (int)pOldProfileTokenBytes[Index];
-    }
-
-    for (Index = 0; Index < NameByteCount; Index++) {
-        Delta += (int)pNewNameBytes[Index] - (int)pOldNameBytes[Index];
-    }
-
-    return (uint16_t)(CurrentChecksum + Delta);
-}
-
 DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo* pOutInfo)
 {
     size_t Offset;
@@ -555,17 +527,9 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
         NewNameBytes[Index * 2u + 1u] = (Index + 1u == NameLength) ? 0xA0u : 0x20u;
     }
 
-    // Checksum = DORChecksum_CalculateDelta(
-    //     DORReadU16LE(pSave->pBytes + DORChecksumOffset),
-    //     pSave->pBytes + DORProfileBlockOffset,
-    //     pSave->pBytes + DORProfileBlockOffset,
-    //     DORProfileTokenSize,
-    //     pSave->pBytes + DORPlayerNameOffset,
-    //     NewNameBytes,
-    //     sizeof(NewNameBytes));
-    Checksum = DORChecksum_Calculate(pSave);
     memcpy(pSave->pBytes + DORPlayerNameOffset, NewNameBytes, sizeof(NewNameBytes));
 
+    Checksum = DORChecksum_Calculate(pSave);
     DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
 
     return DORStatusOk;
