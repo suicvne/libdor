@@ -167,90 +167,65 @@ static int DORChecksum_ValidateDeltaSpan(const uint8_t* pOldBytes, const uint8_t
     return ByteCount == 0u || (pOldBytes != NULL && pNewBytes != NULL);
 }
 
-#include <stdio.h>
-
 uint16_t DORChecksum_Calculate(const DORSave* pSave)
 {
-    size_t Index = 0;
-    size_t ReadBytes = 0;
-    uint16_t Temp = 0x0000;
+    /*
+       This had to be reverse engineered from the game's disassembled MIPS code.
+       The checksum routine is located at 0x00241190..0x002411F8
 
-    // Provisional -- profile token blocks, deck blocks
-    // These fields aren't named or mapped at all, but they exist in the raw bytes.
-    // Profile / state fields
-    for(Index = DORProfileBlockOffset + DORProfileTokenSize; Index < DORPlayerNameOffset; Index++) {
-        Temp += pSave->pBytes[Index];
+        00241190  lhu   a3,0x2(a0)        ; read stored checksum
+        00241194  paddub a2,zero,zero     ; accumulator = 0
+        00241198  paddub t0,zero,zero     ; word index/count = 0
+        0024119C  paddub t1,a0,zero       ; pointer = save base
+        002411A0  ori   v1,zero,0x8078    ; word count = 0x8078
+        002411A4  beq   zero,zero,0x002411C8
+        002411A8  sh    zero,0x2(a0)      ; zero checksum field
+
+        002411AC  lhu   a1,0x0(t1)        ; read next u16
+        002411B0  addiu v0,t0,0x1
+        002411B4  andi  t0,v0,0xFFFF      ; count++
+        002411B8  xor   v0,a2,a1          ; accumulator ^= word
+        002411BC  addiu t1,t1,0x2         ; pointer += 2
+        002411C0  andi  a2,v0,0xFFFF      ; accumulator &= 0xFFFF
+        002411C4  nop
+
+        002411C8  andi  v0,t0,0xFFFF
+        002411CC  slt   v0,v0,v1          ; count < 0x8078?
+        002411D0  bne   v0,zero,0x002411AC
+        002411D4  nop
+
+        002411D8  xori  v1,a2,0x4C6B      ; final checksum = accumulator ^ 0x4C6B
+        002411DC  andi  v0,a3,0xFFFF      ; stored checksum
+        002411E0  andi  a2,v1,0xFFFF      ; calculated checksum
+        002411E4  bne   a2,v0,0x002411F4  ; compare calculated vs stored
+        002411E8  sh    v1,0x2(a0)        ; restore/write calculated checksum
+
+        002411EC  beq   zero,zero,0x002411F8
+        002411F0  addiu v0,zero,0x1       ; return true
+
+        002411F4  paddub v0,zero,zero     ; return false
+        002411F8  jr    ra
+        002411FC  nop
+     */
+
+    size_t Index;
+    uint16_t Temp = 0x0000u;
+
+    if (pSave == NULL || pSave->pBytes == NULL || pSave->ByteCount < DORGameDataSize) {
+        return 0;
     }
 
-    // Scans pre-deck header. Right before Deck A's list.
-    // Reads a card IDs worth of data, adds 1 per "empty card ID" (999).
-    for(Index = DORDeckBlockOffset; Index < DORDeckCardsOffset; Index += 2) {
-        if(DORReadU16LE(pSave->pBytes + Index) == DOREmptyCardId) {
-            Temp += 1;
+    // Read every 2 bytes as a U16 and XOR it onto our Temp.
+    for (Index = 0; Index < DORGameDataSize; Index += 2u) {
+        if (Index == DORChecksumOffset) {
+            continue;
         }
-    }
-    // end provisional
 
-    // name bytes.
-    const uint8_t* RawNameBytes = nullptr;
-    DORSave_GetRawPlayerNameBytes(pSave, &RawNameBytes, &ReadBytes);
-    for(Index = 0; Index < ReadBytes; Index++) {
-        Temp += (int)RawNameBytes[Index];
+        Temp ^= DORReadU16LE(pSave->pBytes + Index);
     }
 
-    // profile token bytes
-    const uint8_t* ProfileTokenBytes = nullptr;
-    DORSave_GetProfileTokenBytes(pSave, &ProfileTokenBytes, &ReadBytes );
-    for(Index = 0; Index < ReadBytes; Index++) {
-        Temp += (int)ProfileTokenBytes[Index];
-    }
-
-    // deck costs??
-    DORDeckInfo TempInfo;
-    if(DORSave_GetDeckInfo(pSave, A, &TempInfo) == DORStatusOk)
-    {
-        for(Index = 0; Index < DORDeckCardCount; Index++) {
-            Temp += TempInfo.Cards[Index];
-        }
-
-        if(DORDeckInfo_IsPresent(&TempInfo)) {
-          Temp += (TempInfo.LeaderCardId & 0xFFu);
-          Temp += (TempInfo.LeaderCardId >> 8);
-          Temp += (TempInfo.StoredDeckCost & 0xFFu);
-          Temp += (TempInfo.StoredDeckCost >> 8);
-        }
-    }
-
-
-    if(DORSave_GetDeckInfo(pSave, B, &TempInfo) == DORStatusOk)
-    {
-        for(Index = 0; Index < DORDeckCardCount; Index++) {
-            Temp += TempInfo.Cards[Index];
-        }
-
-        if(DORDeckInfo_IsPresent(&TempInfo)) {
-            Temp += (TempInfo.LeaderCardId & 0xFFu);
-            Temp += (TempInfo.LeaderCardId >> 8);
-            Temp += (TempInfo.StoredDeckCost & 0xFFu);
-            Temp += (TempInfo.StoredDeckCost >> 8);
-        }
-    }
-
-    if(DORSave_GetDeckInfo(pSave, C, &TempInfo) == DORStatusOk)
-    {
-        for(Index = 0; Index < DORDeckCardCount; Index++) {
-            Temp += TempInfo.Cards[Index];
-        }
-
-        if(DORDeckInfo_IsPresent(&TempInfo)) {
-            Temp += (TempInfo.LeaderCardId & 0xFFu);
-            Temp += (TempInfo.LeaderCardId >> 8);
-            Temp += (TempInfo.StoredDeckCost & 0xFFu);
-            Temp += (TempInfo.StoredDeckCost >> 8);
-        }
-    }
-
-    return Temp;
+    // then at the end, XOR by our magic 0x4C6B
+    return (uint16_t)(Temp ^ 0x4C6Bu);
 }
 
 uint16_t DORChecksum_CalculateDelta(
