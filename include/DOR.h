@@ -108,7 +108,10 @@ typedef enum DORCopySlotDeckLeaderState {
     DORCopySlotDeckLeaderStateLeader = 0xE7u  /**< Observed deck leader copy marker. */
 } DORCopySlotDeckLeaderState;
 
-/** @brief Known values for byte 7 of a card copy slot. */
+/**
+ * @brief Known values for byte 7 of a card copy slot.
+ * StorageLocation = (byte7) & 0xC0
+ */
 typedef enum DORCopySlotStorageLocation {
     DORCopySlotStorageLocationDeckA = 0x00u, /**< Copy is assigned to Deck A. */
     DORCopySlotStorageLocationDeckB = 0x40u, /**< Copy is assigned to Deck B. */
@@ -127,14 +130,19 @@ typedef enum DORCopySlotStorageLocation {
 typedef union DORCopySlot {
     uint8_t Bytes[DORCardCopySlotByteCount]; /**< Exact raw copy-slot bytes. */
     struct {
-        uint8_t Marker0;            /**< Usually 0x25 for known occupied slots. */
-        uint8_t Marker1;            /**< Usually 0x05 for known occupied slots. */
-        uint8_t Marker2;            /**< Usually 0x62 for known occupied slots. */
-        uint8_t DeckLeaderState;    /**< One of DORCopySlotDeckLeaderState for known occupied slots. */
+        /* player token */
+        uint8_t Marker0;            /**< Player token bytes. */
+        uint8_t Marker1;            /**< Player token bytes. */
+        uint8_t Marker2;            /**< Player token bytes. */
+        uint8_t DeckLeaderState;    /**< Player token bytes, may also have | 0x80 applied to it to indicate deck leader. */
+        /* player token */
+
+        /* misc state / book keeping / metadata */
         uint8_t Unknown04;          /**< Unconfirmed byte; commonly 0x00 in clean samples. */
         uint8_t Unknown05;          /**< Unconfirmed byte; commonly 0x00 in clean samples. */
         uint8_t Unknown06;          /**< Unconfirmed byte; commonly 0x00 in clean samples. */
         uint8_t StorageLocation;    /**< One of DORCopySlotStorageLocation for known occupied slots. */
+        /* misc state / book keeping / metadata */
     } Fields; /**< Named byte-level view over the raw copy-slot bytes. */
 } DORCopySlot;
 
@@ -222,30 +230,6 @@ uint16_t DORSave_GetChecksum(const DORSave* pSave);
 uint16_t DORChecksum_Calculate(const DORSave* pSave);
 
 /**
- * @brief Calculates a DOR checksum delta after profile identity bytes change.
- *
- *        Current evidence indicates the save checksum is adjusted by byte deltas
- *        from the encoded player name and the profile validation token.
- *
- * @param [in] CurrentChecksum Current checksum value to update.
- * @param [in] pOldProfileTokenBytes Previous profile token bytes.
- * @param [in] pNewProfileTokenBytes New profile token bytes.
- * @param [in] ProfileTokenByteCount Number of token bytes to compare.
- * @param [in] pOldNameBytes Previous encoded player name bytes.
- * @param [in] pNewNameBytes New encoded player name bytes.
- * @param [in] NameByteCount Number of name bytes to compare.
- * @returns The updated 16-bit checksum after applying known byte deltas.
- */
-uint16_t DORChecksum_CalculateDelta(
-    uint16_t CurrentChecksum,
-    const uint8_t* pOldProfileTokenBytes,
-    const uint8_t* pNewProfileTokenBytes,
-    size_t ProfileTokenByteCount,
-    const uint8_t* pOldNameBytes,
-    const uint8_t* pNewNameBytes,
-    size_t NameByteCount);
-
-/**
  * @brief Attempts to grab card information for a given card ID from the save.
  * @param [in] pSave Pointer to the save structure.
  * @param [in] CardId The Card ID to retrieve information for.
@@ -307,6 +291,22 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
 // ========================================= DORSave Members =========================================
 
 // ========================================= Misc Members =========================================
+
+/**
+ * @brief Returns where a specific copy slot is stored.
+ *        Deck A, Deck B, Deck C, or Chest.
+ * @param [in] pCopySlot copy slot to check storage location for.
+ * @returns Storage location
+ */
+DORCopySlotStorageLocation DORCopySlot_GetStorageLocation(const DORCopySlot* pCopySlot);
+
+/**
+ * @brief Returns if a specific copy slot is marked as a leader.
+ *        Check storage location for what deck it's a leader for.
+ * @param [in] pCopySlot copy slot to check storage location for.
+ * @returns 1 for true, 0 otherwise.
+ */
+int DORCopySlot_IsLeader(const DORCopySlot* pCopySlot);
 
 /**
  * @brief Counts raw copy slots matching the complete-save chest-like pattern.

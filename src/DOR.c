@@ -54,21 +54,6 @@ static int DORCardRecordOffsetFromCardId(uint16_t CardId, size_t* pOutOffset)
     return 1;
 }
 
-static int DORCopySlotHasKnownOccupiedMarker(const DORCopySlot* pSlot)
-{
-    return pSlot->Fields.Marker0 == 0x25u &&
-           pSlot->Fields.Marker1 == 0x05u &&
-           pSlot->Fields.Marker2 == 0x62u &&
-           (pSlot->Fields.DeckLeaderState == DORCopySlotDeckLeaderStateNormal ||
-            pSlot->Fields.DeckLeaderState == DORCopySlotDeckLeaderStateLeader);
-}
-
-static int DORCopySlotHasLeaderMarker(const DORCopySlot* pSlot)
-{
-    return DORCopySlotHasKnownOccupiedMarker(pSlot) &&
-           pSlot->Fields.DeckLeaderState == DORCopySlotDeckLeaderStateLeader;
-}
-
 static int DORCopySlotIsEmpty(const DORCopySlot* pSlot)
 {
     return pSlot->Fields.Marker0 == 0x00u &&
@@ -173,6 +158,15 @@ uint16_t DORChecksum_Calculate(const DORSave* pSave)
        This had to be reverse engineered from the game's disassembled MIPS code.
        The checksum routine is located at 0x00241190..0x002411F8
 
+       How did I do this?
+       I started off by taking the set of bytes representing the player name and finding
+       all possible memory locations. Then, I started tracking reads/writes.
+
+       What I found out is that it's not recalculated on overwrite, only recalculated when you
+       load or save for the first time. The checksum gets calculated somewhere else.
+
+       Eventually I came across 00241190
+
         00241190  lhu   a3,0x2(a0)        ; read stored checksum
         00241194  paddub a2,zero,zero     ; accumulator = 0
         00241198  paddub t0,zero,zero     ; word index/count = 0
@@ -243,7 +237,10 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
         return DORStatusInvalidArgument;
     }
 
+    // pointer into record bytes
     pRecord = pSave->pBytes + Offset;
+
+    // zero out structure, start filling.
     memset(pOutInfo, 0, sizeof(*pOutInfo));
     pOutInfo->CardId = CardId;
     pOutInfo->QuantityOrOwned = pRecord[0x00];
@@ -252,11 +249,13 @@ DORStatus DORSave_GetCardInfo(const DORSave* pSave, uint16_t CardId, DORCardInfo
     pOutInfo->StateMarker = DORReadU32LE(pRecord + 0x04);
     pOutInfo->Unknown08 = DORReadU32LE(pRecord + 0x08);
 
+    // copy record offset -- offset into the copy record array.
     CopyOffset = DORCardRecordsOffset + (size_t)CardId * DORCardRecordSize;
     if (CopyOffset + DORCardRecordSize > pSave->ByteCount) {
         return DORStatusInvalidFormat;
     }
 
+    // pointer to copy records, fill copy records.
     pCopyRecord = pSave->pBytes + CopyOffset;
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
         const uint8_t* pSlot = pCopyRecord + DORCardCopySlotOffset + SlotIndex * DORCardCopySlotSize;
@@ -279,8 +278,8 @@ uint8_t DORCardInfo_GetChestCopyCount(const DORCardInfo* pInfo)
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
         const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
 
-        if (DORCopySlotHasKnownOccupiedMarker(pSlot) &&
-            pSlot->Fields.StorageLocation == DORCopySlotStorageLocationChest) {
+        if (!DORCopySlotIsEmpty(pSlot) &&
+            DORCopySlot_GetStorageLocation(pSlot) == DORCopySlotStorageLocationChest) {
             Count++;
         }
     }
@@ -299,11 +298,9 @@ uint8_t DORCardInfo_GetDeckCopyCount(const DORCardInfo* pInfo)
 
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
         const DORCopySlot* pSlot = &pInfo->CopySlots[SlotIndex];
+        DORCopySlotStorageLocation StorageLoc = DORCopySlot_GetStorageLocation(pSlot);
 
-        if (DORCopySlotHasKnownOccupiedMarker(pSlot) &&
-            (pSlot->Fields.StorageLocation == DORCopySlotStorageLocationDeckA ||
-             pSlot->Fields.StorageLocation == DORCopySlotStorageLocationDeckB ||
-             pSlot->Fields.StorageLocation == DORCopySlotStorageLocationDeckC)) {
+        if(!DORCopySlotIsEmpty(pSlot) && StorageLoc != DORCopySlotStorageLocationChest) {
             Count++;
         }
     }
@@ -321,7 +318,7 @@ uint8_t DORCardInfo_GetLeaderMarkerCount(const DORCardInfo* pInfo)
     }
 
     for (SlotIndex = 0; SlotIndex < DORCardCopySlotCount; SlotIndex++) {
-        if (DORCopySlotHasLeaderMarker(&pInfo->CopySlots[SlotIndex])) {
+        if (DORCopySlot_IsLeader(&pInfo->CopySlots[SlotIndex])) {
             Count++;
         }
     }
@@ -533,4 +530,20 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
     DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
 
     return DORStatusOk;
+}
+
+DORCopySlotStorageLocation DORCopySlot_GetStorageLocation(const DORCopySlot* pCopySlot)
+{
+    if(pCopySlot == NULL) { return DORCopySlotStorageLocationChest; }
+
+    return pCopySlot->Fields.StorageLocation & 0xC0u;
+}
+
+int DORCopySlot_IsLeader(const DORCopySlot* pCopySlot)
+{
+    if (pCopySlot == NULL) {
+        return 0;
+    }
+
+    return (pCopySlot->Fields.DeckLeaderState & 0x80u) != 0u;
 }
