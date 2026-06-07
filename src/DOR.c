@@ -8,6 +8,7 @@
 //       All reads and writes have to be LE.
 
 static int DORDeckInfo_IsPresent(const DORDeckInfo* pInfo);
+static uint8_t DORProgressInfo_ReadCampaignStateByte(const DORProgressInfo* pInfo, size_t SaveOffset);
 
 // ======================================== Little endian IO helpers ========================================
 
@@ -313,9 +314,45 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
     return DORStatusOk;
 }
 
+DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value)
+{
+    uint16_t Checksum;
+
+    if (pSave == NULL) {
+        return DORStatusInvalidArgument;
+    }
+    if (DORProgressFooterStateOffset + 2u > pSave->ByteCount ||
+            DORChecksumOffset + 2u > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    DORWriteU16LE(pSave->pBytes + DORProgressFooterStateOffset, Value);
+
+    Checksum = DORChecksum_Calculate(pSave);
+    DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
+
+    return DORStatusOk;
+}
+
 // ========================================= DORSave =========================================
 
 // ===================================== DORProgressInfo =====================================
+
+static uint8_t DORProgressInfo_ReadCampaignStateByte(const DORProgressInfo* pInfo, size_t SaveOffset)
+{
+    size_t CampaignStateIndex;
+
+    if (pInfo == NULL || SaveOffset < DORProgressCampaignStateOffset) {
+        return 0;
+    }
+
+    CampaignStateIndex = SaveOffset - DORProgressCampaignStateOffset;
+    if (CampaignStateIndex >= DORProgressCampaignStateByteCount) {
+        return 0;
+    }
+
+    return pInfo->CampaignStateBytes[CampaignStateIndex];
+}
 
 DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInfo)
 {
@@ -326,7 +363,8 @@ DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInf
     }
     if (DORProgressRecentCardIdsOffset + DORProgressRecentCardCount * 2u > pSave->ByteCount ||
             DORProgressProfileStateOffset + DORProgressProfileStateByteCount > pSave->ByteCount ||
-            DORProgressFooterStateOffset + DORProgressFooterStateByteCount > pSave->ByteCount) {
+            DORProgressFooterStateOffset + DORProgressFooterStateByteCount > pSave->ByteCount ||
+            DORProgressCampaignStateOffset + DORProgressCampaignStateByteCount > pSave->ByteCount) {
         return DORStatusInvalidFormat;
     }
 
@@ -343,6 +381,10 @@ DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInf
            pSave->pBytes + DORProgressFooterStateOffset,
            DORProgressFooterStateByteCount);
 
+    memcpy(pOutInfo->CampaignStateBytes,
+           pSave->pBytes + DORProgressCampaignStateOffset,
+           DORProgressCampaignStateByteCount);
+
     return DORStatusOk;
 }
 
@@ -357,6 +399,17 @@ DORStatus DORProgressInfo_GetRecentCards(const DORProgressInfo* pInfo, const uin
     return DORStatusOk;
 }
 
+DORStatus DORProgressInfo_GetCampaignStateBytes(const DORProgressInfo* pInfo, const uint8_t** ppOutBytes, size_t* pOutByteCount)
+{
+    if (pInfo == NULL || ppOutBytes == NULL || pOutByteCount == NULL) {
+        return DORStatusInvalidArgument;
+    }
+
+    *ppOutBytes = pInfo->CampaignStateBytes;
+    *pOutByteCount = DORProgressCampaignStateByteCount;
+    return DORStatusOk;
+}
+
 uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo)
 {
     if (pInfo == NULL) {
@@ -364,6 +417,26 @@ uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo)
     }
 
     return DORReadU16LE(pInfo->FooterStateBytes);
+}
+
+uint8_t DORProgressInfo_GetPotentialProfileDuelCount(const DORProgressInfo* pInfo)
+{
+    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialProfileDuelCountOffset);
+}
+
+uint8_t DORProgressInfo_GetPotentialProfileLossCount(const DORProgressInfo* pInfo)
+{
+    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialProfileLossCountOffset);
+}
+
+uint8_t DORProgressInfo_GetPotentialFooterLossCount(const DORProgressInfo* pInfo)
+{
+    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialFooterLossCountOffset);
+}
+
+uint8_t DORProgressInfo_GetPotentialFooterDuelCount(const DORProgressInfo* pInfo)
+{
+    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialFooterDuelCountOffset);
 }
 
 // ===================================== DORProgressInfo =====================================

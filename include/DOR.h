@@ -41,6 +41,13 @@ extern "C" {
 /** @brief Number of observed footer campaign/progression state bytes exposed by DORProgressInfo. */
 #define DORProgressFooterStateByteCount  7u
 
+/** @brief Number of observed campaign/progression bytes exposed by DORProgressInfo.
+ *
+ *         This wider region is provisional and intentionally includes bytes
+ *         with incomplete/uncertain meanings.
+ */
+#define DORProgressCampaignStateByteCount 211u
+
 /** @brief ID used to represent an empty or invalid card ID */
 #define DOREmptyCardId              999u
 
@@ -184,14 +191,17 @@ typedef struct DORDeckInfo {
  * @brief DORProgressInfo Represents currently observed campaign/progression state.
  *
  *        These fields are intentionally conservative. RecentCardIds are decoded
- *        because their storage is a simple u16 card-id list. ProfileStateBytes
- *        and FooterStateBytes expose raw observed state regions until their
- *        exact map, rose-card, win-count, and route meanings are confirmed.
+ *        because their storage is a simple u16 card-id list. ProfileStateBytes,
+ *        FooterStateBytes, and CampaignStateBytes expose raw observed state
+ *        regions until their exact map, rose-card, win-count, loss-count, and
+ *        route meanings are confirmed. CampaignStateBytes is intentionally
+ *        broader and may include incomplete or incorrectly interpreted fields.
  */
 typedef struct DORProgressInfo {
     uint16_t RecentCardIds[DORProgressRecentCardCount];             /**< Recent/acquired card IDs, or DOREmptyCardId. */
     uint8_t ProfileStateBytes[DORProgressProfileStateByteCount];    /**< Raw bytes from the observed profile/campaign state region. */
     uint8_t FooterStateBytes[DORProgressFooterStateByteCount];      /**< Raw bytes from the observed footer progression state region. */
+    uint8_t CampaignStateBytes[DORProgressCampaignStateByteCount];  /**< Raw bytes from the wider provisional campaign/progression state region. */
 } DORProgressInfo;
 
 // ======================================= DORSave Ctors/Dtors =======================================
@@ -311,6 +321,13 @@ DORStatus DORSave_GetProfileTokenBytes(const DORSave* pSave, const uint8_t** ppO
  */
 DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
 
+/**
+ * @brief Sets the observed map/campaign location state on the save.
+ *
+ *        Simultaneously, this will update the checksum of the save.
+ */
+DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value);
+
 // ========================================= DORSave Members =========================================
 
 // ===================================== DORProgressInfo Members =====================================
@@ -333,11 +350,69 @@ DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInf
 DORStatus DORProgressInfo_GetRecentCards(const DORProgressInfo* pInfo, const uint16_t** ppOutCardIds, size_t* pOutCardCount);
 
 /**
+ * @brief Returns the wider provisional campaign/progression byte span.
+ *
+ *        The exact meaning of this span is incomplete and may be incorrect.
+ *        It currently covers observed progression-adjacent bytes including
+ *        potential win/loss and route counters.
+ *
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @param [out] ppOutBytes Pointer to receive the raw campaign state span.
+ * @param [out] pOutByteCount Pointer to receive the number of bytes.
+ * @returns Status indicating if the byte span was retrievable.
+ */
+DORStatus DORProgressInfo_GetCampaignStateBytes(const DORProgressInfo* pInfo, const uint8_t** ppOutBytes, size_t* pOutByteCount);
+
+/**
  * @brief Returns the observed map/campaign location state from progress info.
  * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
  * @returns First footer-state u16, or 0 if pInfo is NULL.
  */
 uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo);
+
+/**
+ * @brief Returns a provisional byte that changed like a total duel/progression count.
+ *
+ *        Observed at inner save offset 0x0FFAF. This interpretation is
+ *        incomplete and may be incorrect.
+ *
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @returns Candidate byte value, or 0 if pInfo is NULL.
+ */
+uint8_t DORProgressInfo_GetPotentialProfileDuelCount(const DORProgressInfo* pInfo);
+
+/**
+ * @brief Returns a provisional byte that changed like a loss count.
+ *
+ *        Observed at inner save offset 0x0FFE4. This interpretation is
+ *        incomplete and may be incorrect.
+ *
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @returns Candidate byte value, or 0 if pInfo is NULL.
+ */
+uint8_t DORProgressInfo_GetPotentialProfileLossCount(const DORProgressInfo* pInfo);
+
+/**
+ * @brief Returns a second provisional byte that changed like a loss count.
+ *
+ *        Observed at inner save offset 0x1002C. This interpretation is
+ *        incomplete and may be incorrect.
+ *
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @returns Candidate byte value, or 0 if pInfo is NULL.
+ */
+uint8_t DORProgressInfo_GetPotentialFooterLossCount(const DORProgressInfo* pInfo);
+
+/**
+ * @brief Returns a provisional byte that changed like a total duel/progression count.
+ *
+ *        Observed at inner save offset 0x1006E. This interpretation is
+ *        incomplete and may be incorrect.
+ *
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @returns Candidate byte value, or 0 if pInfo is NULL.
+ */
+uint8_t DORProgressInfo_GetPotentialFooterDuelCount(const DORProgressInfo* pInfo);
 
 // ===================================== DORProgressInfo Members =====================================
 
