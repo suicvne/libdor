@@ -110,6 +110,7 @@ typedef enum DORDeckID {
 typedef enum DORMapLocation {
     DORMapLocationMillfordHaven =   0x0000u, /**< Red rose start */
     DORMapLocationChester =         0x0002u, /**< vs Weevil */
+    DORMapLocationTewkesbury =      0x0003u, /**< vs Rex */
     DORMapLocationWRStart =         0x000Bu, /**< White Rose start */
 } DORMapLocation;
 
@@ -117,12 +118,6 @@ typedef enum DORMapLocation {
  * @brief DORSave Opaque structure representing a loaded save file.
  */
 typedef struct DORSave DORSave;
-
-/** @brief Known values for byte 3 of a card copy slot. */
-typedef enum DORCopySlotDeckLeaderState {
-    DORCopySlotDeckLeaderStateNormal = 0x67u, /**< Normal owned/deck/chest copy marker. */
-    DORCopySlotDeckLeaderStateLeader = 0xE7u  /**< Observed deck leader copy marker. */
-} DORCopySlotDeckLeaderState;
 
 /**
  * @brief Known values for byte 7 of a card copy slot.
