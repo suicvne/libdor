@@ -346,6 +346,17 @@ DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInf
     return DORStatusOk;
 }
 
+DORStatus DORProgressInfo_GetRecentCards(const DORProgressInfo* pInfo, const uint16_t** ppOutCardIds, size_t* pOutCardCount)
+{
+    if (pInfo == NULL || ppOutCardIds == NULL || pOutCardCount == NULL) {
+        return DORStatusInvalidArgument;
+    }
+
+    *ppOutCardIds = pInfo->RecentCardIds;
+    *pOutCardCount = DORProgressRecentCardCount;
+    return DORStatusOk;
+}
+
 uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo)
 {
     if (pInfo == NULL) {

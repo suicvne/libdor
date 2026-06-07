@@ -106,6 +106,13 @@ typedef enum DORDeckID {
     DORDeckA, DORDeckB, DORDeckC
 } DORDeckID;
 
+/** @brief DORMapLocation enumeration representing known map locations. */
+typedef enum DORMapLocation {
+    DORMapLocationMillfordHaven =   0x0000u, /**< Red rose start */
+    DORMapLocationChester =         0x0002u, /**< vs Weevil */
+    DORMapLocationWRStart =         0x000Bu, /**< White Rose start */
+} DORMapLocation;
+
 /**
  * @brief DORSave Opaque structure representing a loaded save file.
  */
@@ -320,6 +327,15 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
  * @returns Status indicating if the progression information was retrievable or not.
  */
 DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInfo);
+
+/**
+ * @brief Returns the recent/acquired card IDs from progress info.
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @param [out] ppOutCardIds Pointer to receive the recent card ID span.
+ * @param [out] pOutCardCount Pointer to receive the number of card IDs.
+ * @returns Status indicating if the card ID span was retrievable.
+ */
+DORStatus DORProgressInfo_GetRecentCards(const DORProgressInfo* pInfo, const uint16_t** ppOutCardIds, size_t* pOutCardCount);
 
 /**
  * @brief Returns the observed map/campaign location state from progress info.
