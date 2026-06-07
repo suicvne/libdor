@@ -371,15 +371,19 @@ DORStatus DORProgressInfo_GetCampaignStateBytes(const DORProgressInfo* pInfo, co
 uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo);
 
 /**
- * @brief Returns a provisional byte that changed like a total duel/progression count.
+ * @brief Returns a provisional campaign-side/profile state byte.
  *
- *        Observed at inner save offset 0x0FFAF. This interpretation is
+ *        Observed at inner save offset 0x0FFAF. This byte changed in one
+ *        Chester-to-Tewkesbury comparison, but later 0-duel samples showed
+ *        that it is not a reliable duel count. It has also been observed as
+ *        0 on White Rose start saves and 1 on Red Rose start/progression
+ *        saves, so it may be campaign-side related. This interpretation is
  *        incomplete and may be incorrect.
  *
  * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
  * @returns Candidate byte value, or 0 if pInfo is NULL.
  */
-uint8_t DORProgressInfo_GetPotentialProfileDuelCount(const DORProgressInfo* pInfo);
+uint8_t DORProgressInfo_GetPotentialCampaignSideFlag(const DORProgressInfo* pInfo);
 
 /**
  * @brief Returns a provisional byte that changed like a loss count.

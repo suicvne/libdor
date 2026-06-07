@@ -419,9 +419,9 @@ uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo)
     return DORReadU16LE(pInfo->FooterStateBytes);
 }
 
-uint8_t DORProgressInfo_GetPotentialProfileDuelCount(const DORProgressInfo* pInfo)
+uint8_t DORProgressInfo_GetPotentialCampaignSideFlag(const DORProgressInfo* pInfo)
 {
-    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialProfileDuelCountOffset);
+    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialCampaignSideFlagOffset);
 }
 
 uint8_t DORProgressInfo_GetPotentialProfileLossCount(const DORProgressInfo* pInfo)
