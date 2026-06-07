@@ -315,6 +315,48 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
 
 // ========================================= DORSave =========================================
 
+// ===================================== DORProgressInfo =====================================
+
+DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInfo)
+{
+    size_t Index;
+
+    if (pSave == NULL || pOutInfo == NULL) {
+        return DORStatusInvalidArgument;
+    }
+    if (DORProgressRecentCardIdsOffset + DORProgressRecentCardCount * 2u > pSave->ByteCount ||
+            DORProgressProfileStateOffset + DORProgressProfileStateByteCount > pSave->ByteCount ||
+            DORProgressFooterStateOffset + DORProgressFooterStateByteCount > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    memset(pOutInfo, 0, sizeof(*pOutInfo));
+    for (Index = 0; Index < DORProgressRecentCardCount; Index++) {
+        pOutInfo->RecentCardIds[Index] = DORReadU16LE(pSave->pBytes + DORProgressRecentCardIdsOffset + Index * 2u);
+    }
+
+    memcpy(pOutInfo->ProfileStateBytes,
+           pSave->pBytes + DORProgressProfileStateOffset,
+           DORProgressProfileStateByteCount);
+
+    memcpy(pOutInfo->FooterStateBytes,
+           pSave->pBytes + DORProgressFooterStateOffset,
+           DORProgressFooterStateByteCount);
+
+    return DORStatusOk;
+}
+
+uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo)
+{
+    if (pInfo == NULL) {
+        return 0;
+    }
+
+    return DORReadU16LE(pInfo->FooterStateBytes);
+}
+
+// ===================================== DORProgressInfo =====================================
+
 // ======================================= DORCardInfo =======================================
 
 uint8_t DORCardInfo_GetChestCopyCount(const DORCardInfo* pInfo)

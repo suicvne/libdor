@@ -32,6 +32,15 @@ extern "C" {
 /** @brief Maximum number of chars in a save name */
 #define DORNameCharacterCount       12u
 
+/** @brief Number of recent/acquired card ID slots observed before the saved deck block. */
+#define DORProgressRecentCardCount  6u
+
+/** @brief Number of observed profile/campaign state bytes exposed by DORProgressInfo. */
+#define DORProgressProfileStateByteCount 24u
+
+/** @brief Number of observed footer campaign/progression state bytes exposed by DORProgressInfo. */
+#define DORProgressFooterStateByteCount  7u
+
 /** @brief ID used to represent an empty or invalid card ID */
 #define DOREmptyCardId              999u
 
@@ -169,6 +178,20 @@ typedef struct DORDeckInfo {
     uint16_t StoredDeckCost;          /**< Save's stored deck cost for this deck. Probably to be validated against for anti-tampering. */
 } DORDeckInfo;
 
+/**
+ * @brief DORProgressInfo Represents currently observed campaign/progression state.
+ *
+ *        These fields are intentionally conservative. RecentCardIds are decoded
+ *        because their storage is a simple u16 card-id list. ProfileStateBytes
+ *        and FooterStateBytes expose raw observed state regions until their
+ *        exact map, rose-card, win-count, and route meanings are confirmed.
+ */
+typedef struct DORProgressInfo {
+    uint16_t RecentCardIds[DORProgressRecentCardCount];             /**< Recent/acquired card IDs, or DOREmptyCardId. */
+    uint8_t ProfileStateBytes[DORProgressProfileStateByteCount];    /**< Raw bytes from the observed profile/campaign state region. */
+    uint8_t FooterStateBytes[DORProgressFooterStateByteCount];      /**< Raw bytes from the observed footer progression state region. */
+} DORProgressInfo;
+
 // ======================================= DORSave Ctors/Dtors =======================================
 
 /**
@@ -287,6 +310,25 @@ DORStatus DORSave_GetProfileTokenBytes(const DORSave* pSave, const uint8_t** ppO
 DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
 
 // ========================================= DORSave Members =========================================
+
+// ===================================== DORProgressInfo Members =====================================
+
+/**
+ * @brief Attempts to grab observed campaign/progression information from the save.
+ * @param [in] pSave Pointer to the save structure.
+ * @param [out] pOutInfo Pointer to place DORProgressInfo structure in.
+ * @returns Status indicating if the progression information was retrievable or not.
+ */
+DORStatus DORSave_GetProgressInfo(const DORSave* pSave, DORProgressInfo* pOutInfo);
+
+/**
+ * @brief Returns the observed map/campaign location state from progress info.
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @returns First footer-state u16, or 0 if pInfo is NULL.
+ */
+uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo);
+
+// ===================================== DORProgressInfo Members =====================================
 
 // ========================================= Misc Members =========================================
 

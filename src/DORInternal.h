@@ -13,9 +13,12 @@
 #define DORDeckCardsOffset 0x0FD98u     /**< Offset into where first deck cards start */
 #define DORDeckLeaderOffset 0x0FDE8u    /**< Offset into where deck leader data is */
 #define DORDeckRecordSize 0x54u         /**< Size of one saved deck record: 40 card IDs, leader ID, and unknown value */
+#define DORProgressRecentCardIdsOffset 0x0FD8Cu /**< Offset into pre-deck recent/acquired card IDs. */
 #define DORProfileBlockOffset 0x0FF9Cu  /**< Offset into save where profile block is. Player name, etc. */
 #define DORProfileTokenSize 0x04u       /**< Size of the profile validation token. */
 #define DORPlayerNameOffset 0x0FFC8u    /**< Offset into save where player name specifically is. */
+#define DORProgressProfileStateOffset 0x0FF9Cu /**< Offset into observed profile/campaign state bytes. */
+#define DORProgressFooterStateOffset 0x10068u  /**< Offset into observed footer campaign/progression state bytes. */
 
 struct DORSave {
     uint8_t* pBytes;  /**< ptr to raw bytes of DOR Save */
