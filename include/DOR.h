@@ -325,6 +325,8 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
  * @brief Sets the observed map/campaign location state on the save.
  *
  *        Simultaneously, this will update the checksum of the save.
+ *
+ *        This is not editable without editing other corresponding values.
  */
 DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value);
 
@@ -332,6 +334,8 @@ DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value);
  * @brief Sets the provisional campaign-side/profile state byte.
  *
  *        Simultaneously, this will update the checksum of the save.
+ *
+ *        This is not editable without editing other corresponding values.
  */
 DORStatus DORSave_SetPotentialCampaignSideFlag(DORSave* pSave, uint8_t Value);
 
@@ -339,6 +343,8 @@ DORStatus DORSave_SetPotentialCampaignSideFlag(DORSave* pSave, uint8_t Value);
  * @brief Sets the provisional profile loss-count byte.
  *
  *        Simultaneously, this will update the checksum of the save.
+ *
+ *        This is not editable without editing other corresponding values.
  */
 DORStatus DORSave_SetPotentialProfileLossCount(DORSave* pSave, uint8_t Value);
 
@@ -346,6 +352,8 @@ DORStatus DORSave_SetPotentialProfileLossCount(DORSave* pSave, uint8_t Value);
  * @brief Sets the provisional profile duel-count byte.
  *
  *        Simultaneously, this will update the checksum of the save.
+ *
+ *        This is not editable without editing other corresponding values.
  */
 DORStatus DORSave_SetPotentialProfileDuelCount(DORSave* pSave, uint8_t Value);
 
