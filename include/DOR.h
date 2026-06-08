@@ -113,12 +113,43 @@ typedef enum DORDeckID {
     DORDeckA, DORDeckB, DORDeckC
 } DORDeckID;
 
-/** @brief DORMapLocation enumeration representing known map locations. */
+/**
+ *  @brief DORMapLocation enumeration representing known map locations.
+ *         found names in ROM starting at 0x0029AEF0
+ *
+ *         Routine @0x002354A0 references that table
+ *         Reads bytes from 0x00299ED6, 0x0023557C, 0x002355F4, 0x00235618
+ *
+ *         The map locations string table is as follows
+            0x00 0  Brest
+            0x01 1  Milford Haven
+            0x02 2  Chester
+            0x03 3  Lancashire
+            0x04 4  Newcastle
+            0x05 5  Towton
+            0x06 6  St Albans
+            0x07 7  Bosworth
+            0x08 8  Tewkesbury
+            0x09 9  Exeter
+            0x0A 10 Isle of Man
+            0x0B 11 Stonehenge
+            0x0C 12 Windsor
+            0x0D 13 London
+            0x0E 14 Canterbury
+            0x0F 15 Dover
+            0x10 16 Strait of Dover
+            0x11 17 Boulogne
+            0x12 18 Amiens
+            0x13 19 Paris
+            0x14 20 Le mans
+            0x15 21 Rennes
+  *        However, the map location byte indicated here does not 1:1 correlate.
+*/
 typedef enum DORMapLocation {
     DORMapLocationMillfordHaven =   0x0000u, /**< Red rose start */
     DORMapLocationChester =         0x0002u, /**< vs Weevil */
     DORMapLocationTewkesbury =      0x0003u, /**< vs Rex */
-    DORMapLocationWRStart =         0x000Bu, /**< White Rose start */
+    DORMapLocationStonehenge =      0x000Bu, /**< White Rose start */
 } DORMapLocation;
 
 /**
@@ -322,22 +353,53 @@ DORStatus DORSave_GetProfileTokenBytes(const DORSave* pSave, const uint8_t** ppO
 DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
 
 /**
- * @brief Sets the observed map/campaign location state on the save.
+ * @brief Sets an unconfirmed first-footer-word progress state on the save.
  *
  *        Simultaneously, this will update the checksum of the save.
  *
- *        This is not editable without editing other corresponding values.
+ *        This field has not been observed to control the actual map marker;
+ *        current evidence points to footer byte 4 instead.
  */
-DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value);
+DORStatus DORSave_SetUnconfirmedFooterWord(DORSave* pSave, uint16_t Value);
 
 /**
- * @brief Sets the provisional campaign-side/profile state byte.
+ * @brief Sets the observed footer campaign/progression state bytes.
+ *
+ *        ByteCount must be DORProgressFooterStateByteCount.
+ *        Simultaneously, this will update the checksum of the save.
+ */
+DORStatus DORSave_SetProgressFooterStateBytes(DORSave* pSave, const uint8_t* pBytes, size_t ByteCount);
+
+/**
+ * @brief Sets the wider provisional campaign/progression state bytes.
+ *
+ *        ByteCount must be DORProgressCampaignStateByteCount.
+ *        Simultaneously, this will update the checksum of the save.
+ */
+DORStatus DORSave_SetProgressCampaignStateBytes(DORSave* pSave, const uint8_t* pBytes, size_t ByteCount);
+
+/**
+ * @brief Sets the observed campaign-side byte.
  *
  *        Simultaneously, this will update the checksum of the save.
  *
- *        This is not editable without editing other corresponding values.
+ *        Observed at inner save offset 0x0FFA4, which is profile byte 9
+ *        one-based / byte 8 zero-based.
  */
-DORStatus DORSave_SetPotentialCampaignSideFlag(DORSave* pSave, uint8_t Value);
+DORStatus DORSave_SetCampaignSideByte(DORSave* pSave, uint8_t Value);
+
+/**
+ * @brief Sets the observed rose/progression profile state byte.
+ *
+ *        Simultaneously, this will update the checksum of the save.
+ *
+ *        Observed at inner save offset 0x0FFAF. This affects rose-card or
+ *        progression state, but is not confirmed as the campaign-side byte.
+ *        Known observations include 0x00 on Red Rose side in at least one
+ *        manipulated save, 0x02 for Red Rose with zero rose cards, and 0x03
+ *        not producing the expected Red Rose card.
+ */
+DORStatus DORSave_SetRoseProgressionStateByte(DORSave* pSave, uint8_t Value);
 
 /**
  * @brief Sets the provisional profile loss-count byte.
@@ -393,26 +455,37 @@ DORStatus DORProgressInfo_GetRecentCards(const DORProgressInfo* pInfo, const uin
 DORStatus DORProgressInfo_GetCampaignStateBytes(const DORProgressInfo* pInfo, const uint8_t** ppOutBytes, size_t* pOutByteCount);
 
 /**
- * @brief Returns the observed map/campaign location state from progress info.
+ * @brief Returns an unconfirmed first-footer-word progress state from progress info.
  * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
  * @returns First footer-state u16, or 0 if pInfo is NULL.
  */
-uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo);
+uint16_t DORProgressInfo_GetUnconfirmedFooterWord(const DORProgressInfo* pInfo);
 
 /**
- * @brief Returns a provisional campaign-side/profile state byte.
+ * @brief Returns the observed campaign-side byte.
  *
- *        Observed at inner save offset 0x0FFAF. This byte changed in one
- *        Chester-to-Tewkesbury comparison, but later 0-duel samples showed
- *        that it is not a reliable duel count. It has also been observed as
- *        0 on White Rose start saves and 1 on Red Rose start/progression
- *        saves, so it may be campaign-side related. This interpretation is
- *        incomplete and may be incorrect.
+ *        Observed at inner save offset 0x0FFA4, which is profile byte 9
+ *        one-based / byte 8 zero-based.
  *
  * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
- * @returns Candidate byte value, or 0 if pInfo is NULL.
+ * @returns Campaign-side byte value, or 0 if pInfo is NULL.
  */
-uint8_t DORProgressInfo_GetPotentialCampaignSideFlag(const DORProgressInfo* pInfo);
+uint8_t DORProgressInfo_GetCampaignSideByte(const DORProgressInfo* pInfo);
+
+/**
+ * @brief Returns the observed rose/progression profile state byte.
+ *
+ *        Observed at inner save offset 0x0FFAF. This affects rose-card or
+ *        progression state, but is not confirmed as the campaign-side byte.
+ *        Known observations include 0x00 on Red Rose side in at least one
+ *        manipulated save, 0x02 for Red Rose with zero rose cards, and 0x03
+ *        not producing the expected Red Rose card. Changing this byte can also
+ *        cause the game to report 8 rose cards for the selected side.
+ *
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @returns Rose/progression byte value, or 0 if pInfo is NULL.
+ */
+uint8_t DORProgressInfo_GetRoseProgressionStateByte(const DORProgressInfo* pInfo);
 
 /**
  * @brief Returns a provisional byte that changed like a loss count.

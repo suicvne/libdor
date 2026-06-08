@@ -315,6 +315,33 @@ profile candidate: 0x0FF9C..0x0FFB3
 footer candidate:  0x10068..0x1006E
 ```
 
+Profile byte 9 (one-based), profile byte 8 (zero-based), which is inner save
+offset `0x0FFA4`, controls campaign side. This was confirmed by changing the
+starting campaign-state byte from `0x01` to `0x00`.
+
+Profile byte 20 (one-based), which is inner save offset `0x0FFAF`, appears to
+affect rose-card/progression state, but it is not confirmed as the campaign
+side byte and is not a simple boolean. Known observations:
+
+```text
+0x00: still observed on Red Rose side in at least one manipulated save
+0x01: observed on Red Rose side/progression
+0x02: Red Rose, zero rose cards
+0x03: did not produce the expected Red Rose card; produced White Rose card state in one test
+```
+
+Changing this byte also caused the game to automatically report 8 rose cards
+for the selected side in some states, so the red/white rose-card count appears
+to be derived from progression state rather than stored as a simple literal
+count in this region. Changing related state also hid the first White Rose map
+location, but did not hide Stonehenge, so map visibility is only partially
+derived from this region.
+
+A comparison between two manipulated saves found two early campaign-state
+`0x01 -> 0x00` changes: profile byte 9 at inner offset `0x0FFA4`, and profile
+byte 20 at inner offset `0x0FFAF`. Follow-up testing identified `0x0FFA4` as
+the side control and `0x0FFAF` as separate rose-card/progression state.
+
 Footer bytes:
 
 ```text
@@ -322,6 +349,16 @@ red side start   @ 0x10068: 00 00 01 01 00 00
 white side start @ 0x10068: 0B 00 0C 0B 00 02
 100% complete    @ 0x10068: 14 00 0B 0B 0B 01 05
 ```
+
+The actual map-location marker appears to be stored in footer byte 4
+(one-based), which is inner save offset `0x1006B`. Observed values match the
+map-location string table: `0x01` places the player at the Red Rose start /
+Milford Haven, `0x0B` places the player at Stonehenge, and `0x0C` places the
+player over Windsor. This byte moves the player's map marker, but does not by
+itself switch the campaign side or make expected map locations appear.
+
+The first footer word (`0x10068..0x10069`), now exposed as "Unconfirmed Footer
+Word", has not yet been observed to affect the game.
 
 No byte sequence has been confirmed as a literal red/white rose count. The observed data does not contain a clean `08`, `08 08`, or `16` counter matching the UI facts. Current best interpretation is that these regions store campaign side/progression/reincarnation state from which the game derives rose UI state.
 

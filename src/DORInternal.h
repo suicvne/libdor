@@ -20,7 +20,8 @@
 #define DORProgressProfileStateOffset 0x0FF9Cu /**< Offset into observed profile/campaign state bytes. */
 #define DORProgressFooterStateOffset 0x10068u  /**< Offset into observed footer campaign/progression state bytes. */
 #define DORProgressCampaignStateOffset 0x0FF9Cu /**< Offset into wider provisional campaign/progression state bytes. */
-#define DORProgressPotentialCampaignSideFlagOffset 0x0FFAFu /**< Provisional observed campaign-side/profile state flag candidate. */
+#define DORProgressCampaignSideByteOffset 0x0FFA4u /**< Observed campaign-side byte; profile byte 9 one-based, byte 8 zero-based. */
+#define DORProgressRoseProgressionStateByteOffset 0x0FFAFu /**< Observed rose/progression profile state byte; not confirmed as campaign side. */
 #define DORProgressPotentialProfileLossCountOffset 0x0FFE4u /**< Provisional observed loss counter candidate. */
 #define DORProgressPotentialFooterLossCountOffset 0x1002Cu  /**< Provisional observed loss counter candidate. */
 #define DORProgressPotentialFooterDuelCountOffset 0x1006Eu  /**< Provisional observed duel/progression counter candidate. */

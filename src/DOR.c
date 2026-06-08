@@ -315,7 +315,7 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName)
     return DORStatusOk;
 }
 
-DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value)
+DORStatus DORSave_SetUnconfirmedFooterWord(DORSave* pSave, uint16_t Value)
 {
     uint16_t Checksum;
 
@@ -328,6 +328,48 @@ DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value)
     }
 
     DORWriteU16LE(pSave->pBytes + DORProgressFooterStateOffset, Value);
+
+    Checksum = DORChecksum_Calculate(pSave);
+    DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
+
+    return DORStatusOk;
+}
+
+DORStatus DORSave_SetProgressFooterStateBytes(DORSave* pSave, const uint8_t* pBytes, size_t ByteCount)
+{
+    uint16_t Checksum;
+
+    if (pSave == NULL || pBytes == NULL) {
+        return DORStatusInvalidArgument;
+    }
+    if (ByteCount != DORProgressFooterStateByteCount ||
+            DORProgressFooterStateOffset + DORProgressFooterStateByteCount > pSave->ByteCount ||
+            DORChecksumOffset + 2u > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    memcpy(pSave->pBytes + DORProgressFooterStateOffset, pBytes, DORProgressFooterStateByteCount);
+
+    Checksum = DORChecksum_Calculate(pSave);
+    DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
+
+    return DORStatusOk;
+}
+
+DORStatus DORSave_SetProgressCampaignStateBytes(DORSave* pSave, const uint8_t* pBytes, size_t ByteCount)
+{
+    uint16_t Checksum;
+
+    if (pSave == NULL || pBytes == NULL) {
+        return DORStatusInvalidArgument;
+    }
+    if (ByteCount != DORProgressCampaignStateByteCount ||
+            DORProgressCampaignStateOffset + DORProgressCampaignStateByteCount > pSave->ByteCount ||
+            DORChecksumOffset + 2u > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    memcpy(pSave->pBytes + DORProgressCampaignStateOffset, pBytes, DORProgressCampaignStateByteCount);
 
     Checksum = DORChecksum_Calculate(pSave);
     DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
@@ -354,9 +396,14 @@ static DORStatus DORSave_SetProgressByte(DORSave* pSave, size_t SaveOffset, uint
     return DORStatusOk;
 }
 
-DORStatus DORSave_SetPotentialCampaignSideFlag(DORSave* pSave, uint8_t Value)
+DORStatus DORSave_SetRoseProgressionStateByte(DORSave* pSave, uint8_t Value)
 {
-    return DORSave_SetProgressByte(pSave, DORProgressPotentialCampaignSideFlagOffset, Value);
+    return DORSave_SetProgressByte(pSave, DORProgressRoseProgressionStateByteOffset, Value);
+}
+
+DORStatus DORSave_SetCampaignSideByte(DORSave* pSave, uint8_t Value)
+{
+    return DORSave_SetProgressByte(pSave, DORProgressCampaignSideByteOffset, Value);
 }
 
 DORStatus DORSave_SetPotentialProfileLossCount(DORSave* pSave, uint8_t Value)
@@ -445,7 +492,7 @@ DORStatus DORProgressInfo_GetCampaignStateBytes(const DORProgressInfo* pInfo, co
     return DORStatusOk;
 }
 
-uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo)
+uint16_t DORProgressInfo_GetUnconfirmedFooterWord(const DORProgressInfo* pInfo)
 {
     if (pInfo == NULL) {
         return 0;
@@ -454,9 +501,14 @@ uint16_t DORProgressInfo_GetMapLocationState(const DORProgressInfo* pInfo)
     return DORReadU16LE(pInfo->FooterStateBytes);
 }
 
-uint8_t DORProgressInfo_GetPotentialCampaignSideFlag(const DORProgressInfo* pInfo)
+uint8_t DORProgressInfo_GetRoseProgressionStateByte(const DORProgressInfo* pInfo)
 {
-    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialCampaignSideFlagOffset);
+    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressRoseProgressionStateByteOffset);
+}
+
+uint8_t DORProgressInfo_GetCampaignSideByte(const DORProgressInfo* pInfo)
+{
+    return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressCampaignSideByteOffset);
 }
 
 uint8_t DORProgressInfo_GetPotentialProfileLossCount(const DORProgressInfo* pInfo)
