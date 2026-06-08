@@ -328,6 +328,27 @@ DORStatus DORSave_SetPlayerName(DORSave* pSave, const char* pName);
  */
 DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value);
 
+/**
+ * @brief Sets the provisional campaign-side/profile state byte.
+ *
+ *        Simultaneously, this will update the checksum of the save.
+ */
+DORStatus DORSave_SetPotentialCampaignSideFlag(DORSave* pSave, uint8_t Value);
+
+/**
+ * @brief Sets the provisional profile loss-count byte.
+ *
+ *        Simultaneously, this will update the checksum of the save.
+ */
+DORStatus DORSave_SetPotentialProfileLossCount(DORSave* pSave, uint8_t Value);
+
+/**
+ * @brief Sets the provisional profile duel-count byte.
+ *
+ *        Simultaneously, this will update the checksum of the save.
+ */
+DORStatus DORSave_SetPotentialProfileDuelCount(DORSave* pSave, uint8_t Value);
+
 // ========================================= DORSave Members =========================================
 
 // ===================================== DORProgressInfo Members =====================================
@@ -417,6 +438,16 @@ uint8_t DORProgressInfo_GetPotentialFooterLossCount(const DORProgressInfo* pInfo
  * @returns Candidate byte value, or 0 if pInfo is NULL.
  */
 uint8_t DORProgressInfo_GetPotentialFooterDuelCount(const DORProgressInfo* pInfo);
+
+/**
+ * @brief Returns a provisional byte that changed like a total duel/progression count.
+ *
+ *        Alias for DORProgressInfo_GetPotentialFooterDuelCount.
+ *
+ * @param [in] pInfo Pointer to progress info previously filled by DORSave_GetProgressInfo.
+ * @returns Candidate byte value, or 0 if pInfo is NULL.
+ */
+uint8_t DORProgressInfo_GetPotentialProfileDuelCount(const DORProgressInfo* pInfo);
 
 // ===================================== DORProgressInfo Members =====================================
 

@@ -9,6 +9,7 @@
 
 static int DORDeckInfo_IsPresent(const DORDeckInfo* pInfo);
 static uint8_t DORProgressInfo_ReadCampaignStateByte(const DORProgressInfo* pInfo, size_t SaveOffset);
+static DORStatus DORSave_SetProgressByte(DORSave* pSave, size_t SaveOffset, uint8_t Value);
 
 // ======================================== Little endian IO helpers ========================================
 
@@ -334,6 +335,40 @@ DORStatus DORSave_SetMapLocationState(DORSave* pSave, uint16_t Value)
     return DORStatusOk;
 }
 
+static DORStatus DORSave_SetProgressByte(DORSave* pSave, size_t SaveOffset, uint8_t Value)
+{
+    uint16_t Checksum;
+
+    if (pSave == NULL) {
+        return DORStatusInvalidArgument;
+    }
+    if (SaveOffset >= pSave->ByteCount || DORChecksumOffset + 2u > pSave->ByteCount) {
+        return DORStatusInvalidFormat;
+    }
+
+    pSave->pBytes[SaveOffset] = Value;
+
+    Checksum = DORChecksum_Calculate(pSave);
+    DORWriteU16LE(pSave->pBytes + DORChecksumOffset, Checksum);
+
+    return DORStatusOk;
+}
+
+DORStatus DORSave_SetPotentialCampaignSideFlag(DORSave* pSave, uint8_t Value)
+{
+    return DORSave_SetProgressByte(pSave, DORProgressPotentialCampaignSideFlagOffset, Value);
+}
+
+DORStatus DORSave_SetPotentialProfileLossCount(DORSave* pSave, uint8_t Value)
+{
+    return DORSave_SetProgressByte(pSave, DORProgressPotentialProfileLossCountOffset, Value);
+}
+
+DORStatus DORSave_SetPotentialProfileDuelCount(DORSave* pSave, uint8_t Value)
+{
+    return DORSave_SetProgressByte(pSave, DORProgressPotentialFooterDuelCountOffset, Value);
+}
+
 // ========================================= DORSave =========================================
 
 // ===================================== DORProgressInfo =====================================
@@ -437,6 +472,11 @@ uint8_t DORProgressInfo_GetPotentialFooterLossCount(const DORProgressInfo* pInfo
 uint8_t DORProgressInfo_GetPotentialFooterDuelCount(const DORProgressInfo* pInfo)
 {
     return DORProgressInfo_ReadCampaignStateByte(pInfo, DORProgressPotentialFooterDuelCountOffset);
+}
+
+uint8_t DORProgressInfo_GetPotentialProfileDuelCount(const DORProgressInfo* pInfo)
+{
+    return DORProgressInfo_GetPotentialFooterDuelCount(pInfo);
 }
 
 // ===================================== DORProgressInfo =====================================
