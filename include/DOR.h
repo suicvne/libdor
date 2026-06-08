@@ -121,35 +121,51 @@ typedef enum DORDeckID {
  *         Reads bytes from 0x00299ED6, 0x0023557C, 0x002355F4, 0x00235618
  *
  *         The map locations string table is as follows
-            0x00 0  Brest
-            0x01 1  Milford Haven
-            0x02 2  Chester
-            0x03 3  Lancashire
-            0x04 4  Newcastle
-            0x05 5  Towton
-            0x06 6  St Albans
-            0x07 7  Bosworth
-            0x08 8  Tewkesbury
-            0x09 9  Exeter
-            0x0A 10 Isle of Man
-            0x0B 11 Stonehenge
-            0x0C 12 Windsor
-            0x0D 13 London
-            0x0E 14 Canterbury
-            0x0F 15 Dover
-            0x10 16 Strait of Dover
-            0x11 17 Boulogne
-            0x12 18 Amiens
-            0x13 19 Paris
-            0x14 20 Le mans
-            0x15 21 Rennes
-  *        However, the map location byte indicated here does not 1:1 correlate.
+ *          0x00 0  Brest
+ *          0x01 1  Milford Haven
+ *          0x02 2  Chester
+ *          0x03 3  Lancashire
+ *          0x04 4  Newcastle
+ *          0x05 5  Towton
+ *          0x06 6  St Albans
+ *          0x07 7  Bosworth
+ *          0x08 8  Tewkesbury
+ *          0x09 9  Exeter
+ *          0x0A 10 Isle of Man
+ *          0x0B 11 Stonehenge
+ *          0x0C 12 Windsor
+ *          0x0D 13 London
+ *          0x0E 14 Canterbury
+ *          0x0F 15 Dover
+ *          0x10 16 Strait of Dover
+ *          0x11 17 Boulogne
+ *          0x12 18 Amiens
+ *          0x13 19 Paris
+ *          0x14 20 Le mans
+ *          0x15 21 Rennes
 */
 typedef enum DORMapLocation {
-    DORMapLocationMillfordHaven =   0x0000u, /**< Red rose start */
-    DORMapLocationChester =         0x0002u, /**< vs Weevil */
-    DORMapLocationTewkesbury =      0x0003u, /**< vs Rex */
-    DORMapLocationStonehenge =      0x000Bu, /**< White Rose start */
+    DORMapLocationMillfordHaven =   0x00u, /**< Red rose start */
+    DORMapLocationChester =         0x02u, /**< Chester; vs Weevil */
+    DORMapLocationLancashire =      0x03u, /**< Lancashire; vs Pegasus? */
+    DORMapLocationNewcastle =       0x04u, /**< Newcastle */
+    DORMapLocationTowton =          0x05u, /**< Towton; vs Keith */
+    DORMapLocationStAlbans =        0x06u, /**< St Albans */
+    DORMapLocationBosworth =        0x07u, /**< Bosworth */
+    DORMapLocationTewkesbury =      0x08u, /**< vs Rex */
+    DORMapLocationExeter =          0x09u, /**< Exeter; vs Necromancer */
+    DORMapLocationIsleOfMan =       0x0Au, /**< Isle of Man; vs Ishtar? */
+    DORMapLocationStonehenge =      0x0Bu, /**< White Rose start */
+    DORmapLocationWindsor =         0x0Cu, /**< Windsor; vs Tea */
+    DORMapLocationLondon =          0x0Du, /**< London; vs Tristan? */
+    DORMapLocationCanterbury =      0x0Eu, /**< Canterbury */
+    DORMapLocationDover =           0x0Fu, /**< Dover */
+    DORMapLocationStraitOfDover =   0x10u, /**< Strait of Dover; vs Mako */
+    DORMapLocationBoulogne =        0x11u, /**< Boulogne */
+    DORMapLocationAmiens =          0x12u, /**< Amiens */
+    DORMapLocationParis =           0x13u, /**< Paris */
+    DORMapLocationLeMans =          0x14u, /**< Le Mans */
+    DORMapLocationRennes =          0x15u, /**< Rennes */
 } DORMapLocation;
 
 /**
